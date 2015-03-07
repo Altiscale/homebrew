@@ -6,9 +6,8 @@ class Uudeview < Formula
   sha1 '2c6ab7d355b545218bd0877d598bd5327d9fd125'
 
   # Fix function signatures (for clang)
-  patch :p0 do
-    url "https://trac.macports.org/export/102865/trunk/dports/mail/uudeview/files/inews.c.patch"
-    sha1 "a21eb4f1081de31099bffbbb3161ca74ca81bad5"
+  def patches
+    {:p0 => "https://trac.macports.org/export/102865/trunk/dports/mail/uudeview/files/inews.c.patch"}
   end
 
   def install
@@ -18,7 +17,7 @@ class Uudeview < Formula
     system "make install"
   end
 
-  test do
+  def test
     system "#{bin}/uudeview", "-V"
   end
 end

@@ -13,7 +13,7 @@ class Dex2jar < Formula
     prefix.install_metafiles
     libexec.install Dir['*']
 
-    Dir.glob("#{libexec}/*.sh") do |script|
+    Dir["#{libexec}/*.sh"].each do |script|
       bin.install_symlink script => File.basename(script, '.sh')
     end
   end

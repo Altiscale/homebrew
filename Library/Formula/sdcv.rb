@@ -2,7 +2,8 @@ require 'formula'
 
 class Sdcv < Formula
   homepage 'http://sdcv.sourceforge.net/'
-  url 'http://svn.code.sf.net/p/sdcv/code/trunk', :revision => '76'
+  url 'https://svn.code.sf.net/p/sdcv/code/trunk',
+    :using => UnsafeSubversionDownloadStrategy, :revision => '76'
   version '0.5-2013-09-10'
 
   depends_on 'pkg-config' => :build
@@ -10,9 +11,6 @@ class Sdcv < Formula
   depends_on 'gettext'
   depends_on 'glib'
   depends_on 'readline'
-
-  # see: https://github.com/Homebrew/homebrew/issues/26321
-  needs :cxx11
 
   def install
     mkdir 'build' do

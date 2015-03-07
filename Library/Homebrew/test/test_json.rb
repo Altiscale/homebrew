@@ -1,7 +1,7 @@
 require 'testing_env'
 require 'utils/json'
 
-class JsonSmokeTest < Homebrew::TestCase
+class JsonSmokeTest < Test::Unit::TestCase
   def test_encode
     hash = { "foo" => ["bar", "baz"] }
     json = %q|{"foo":["bar","baz"]}|

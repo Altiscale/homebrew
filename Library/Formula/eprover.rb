@@ -11,7 +11,7 @@ class Eprover < Formula
     system "make install"
   end
 
-  test do
+  def test
     system "#{bin}/eproof"
   end
 end

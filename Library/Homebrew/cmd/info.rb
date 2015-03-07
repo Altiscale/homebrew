@@ -1,12 +1,11 @@
-require "blacklist"
-require "caveats"
-require "cmd/options"
-require "formula"
-require "keg"
-require "tab"
-require "utils/json"
+require 'formula'
+require 'tab'
+require 'keg'
+require 'caveats'
+require 'blacklist'
+require 'utils/json'
 
-module Homebrew
+module Homebrew extend self
   def info
     # eventually we'll solidify an API, but we'll keep old versions
     # awhile around for compatibility
@@ -21,14 +20,20 @@ module Homebrew
 
   def print_info
     if ARGV.named.empty?
-      if HOMEBREW_CELLAR.exist?
+      if ARGV.include? "--all"
+        Formula.each do |f|
+          info_formula f
+          puts '---'
+        end
+      elsif HOMEBREW_CELLAR.exist?
         puts "#{HOMEBREW_CELLAR.children.length} kegs, #{HOMEBREW_CELLAR.abv}"
       end
+    elsif valid_url ARGV[0]
+      info_formula Formula.factory(ARGV.shift)
     else
-      ARGV.named.each_with_index do |f,i|
-        puts unless i == 0
+      ARGV.named.each do |f|
         begin
-          info_formula Formulary.factory(f)
+          info_formula Formula.factory(f)
         rescue FormulaUnavailableError
           # No formula with this name, try a blacklist lookup
           if (blacklist = blacklisted?(f))
@@ -42,19 +47,17 @@ module Homebrew
   end
 
   def print_json
-    ff = if ARGV.include? "--all"
-           Formula
-         elsif ARGV.include? "--installed"
-           Formula.installed
-         else
-           ARGV.formulae
-         end
-    json = ff.map {|f| f.to_hash}
-    puts Utils::JSON.dump(json)
+    formulae = ARGV.include?("--all") ? Formula : ARGV.formulae
+    json = formulae.map {|f| f.to_hash}
+    if json.size == 1
+      puts Utils::JSON.dump(json.pop)
+    else
+      puts Utils::JSON.dump(json)
+    end
   end
 
   def github_fork
-    if (HOMEBREW_REPOSITORY/".git").directory?
+    if which 'git' and (HOMEBREW_REPOSITORY/".git").directory?
       if `git remote -v` =~ %r{origin\s+(https?://|git(?:@|://))github.com[:/](.+)/homebrew}
         $2
       end
@@ -62,34 +65,29 @@ module Homebrew
   end
 
   def github_info f
-    if f.tap?
-      user, repo = f.tap.split("/", 2)
-      path = f.path.relative_path_from(HOMEBREW_LIBRARY.join("Taps", f.tap))
-      "https://github.com/#{user}/#{repo}/blob/master/#{path}"
-    elsif f.core_formula?
-      user = f.path.parent.cd { github_fork }
-      path = f.path.relative_path_from(HOMEBREW_REPOSITORY)
-      "https://github.com/#{user}/homebrew/blob/master/#{path}"
+    path = f.path.realpath
+
+    if path.to_s =~ HOMEBREW_TAP_PATH_REGEX
+      user = $1
+      repo = "homebrew-#$2"
+      path = $3
     else
-      f.path
+      path.parent.cd do
+        user = github_fork
+      end
+      repo = "homebrew"
+      path = "Library/Formula/#{path.basename}"
     end
+
+    "https://github.com/#{user}/#{repo}/commits/master/#{path}"
   end
 
   def info_formula f
     specs = []
-
-    if stable = f.stable
-      s = "stable #{stable.version}"
-      s += " (bottled)" if stable.bottled?
-      specs << s
-    end
-
-    if devel = f.devel
-      s = "devel #{devel.version}"
-      s += " (bottled)" if devel.bottled?
-      specs << s
-    end
-
+    stable = "stable #{f.stable.version}" if f.stable
+    stable += " (bottled)" if f.bottle
+    specs << stable if stable
+    specs << "devel #{f.devel.version}" if f.devel
     specs << "HEAD" if f.head
 
     puts "#{f.name}: #{specs*', '}#{' (pinned)' if f.pinned?}"
@@ -123,12 +121,13 @@ module Homebrew
     unless f.deps.empty?
       ohai "Dependencies"
       %w{build required recommended optional}.map do |type|
-        deps = f.deps.send(type).uniq
+        deps = f.deps.send(type)
         puts "#{type.capitalize}: #{decorate_dependencies deps}" unless deps.empty?
       end
     end
 
-    unless f.options.empty?
+    unless f.build.empty?
+      require 'cmd/options'
       ohai "Options"
       Homebrew.dump_options_for_formula f
     end
@@ -159,4 +158,11 @@ module Homebrew
     end
     deps_status * ", "
   end
+
+  private
+
+  def valid_url u
+    u[0..6] == 'http://' or u[0..7] == 'https://' or u[0..5] == 'ftp://'
+  end
+
 end

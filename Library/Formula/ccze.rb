@@ -8,7 +8,9 @@ class Ccze < Formula
   depends_on 'pcre'
 
   # Taken from debian
-  patch :DATA
+  def patches
+    DATA
+  end
 
   def install
     system "./configure", "--prefix=#{prefix}",

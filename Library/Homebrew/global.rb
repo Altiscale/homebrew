@@ -26,20 +26,23 @@ def cache
     if home_cache.directory? and home_cache.writable_real?
       home_cache
     else
-      Pathname.new("/Library/Caches/Homebrew").extend Module.new {
+      root_cache = Pathname.new("/Library/Caches/Homebrew")
+      class << root_cache
+        alias :oldmkpath :mkpath
         def mkpath
           unless exist?
-            super
-            chmod 0775
+            oldmkpath
+            chmod 0777
           end
         end
-      }
+      end
+      root_cache
     end
   end
 end
 
 HOMEBREW_CACHE = cache
-undef cache
+undef cache # we use a function to prevent adding home_cache to the global scope
 
 # Where brews installed via URL are cached
 HOMEBREW_CACHE_FORMULA = HOMEBREW_CACHE+"Formula"
@@ -48,12 +51,8 @@ if not defined? HOMEBREW_BREW_FILE
   HOMEBREW_BREW_FILE = ENV['HOMEBREW_BREW_FILE'] || which('brew').to_s
 end
 
-# Where we link under
-HOMEBREW_PREFIX = Pathname.new(HOMEBREW_BREW_FILE).dirname.parent
-
-# Where .git is found
-HOMEBREW_REPOSITORY = Pathname.new(HOMEBREW_BREW_FILE).realpath.dirname.parent
-
+HOMEBREW_PREFIX = Pathname.new(HOMEBREW_BREW_FILE).dirname.parent # Where we link under
+HOMEBREW_REPOSITORY = Pathname.new(HOMEBREW_BREW_FILE).realpath.dirname.parent # Where .git is found
 HOMEBREW_LIBRARY = HOMEBREW_REPOSITORY/"Library"
 HOMEBREW_CONTRIB = HOMEBREW_REPOSITORY/"Library/Contributions"
 
@@ -67,16 +66,8 @@ end
 
 HOMEBREW_LOGS = Pathname.new(ENV['HOMEBREW_LOGS'] || '~/Library/Logs/Homebrew/').expand_path
 
-HOMEBREW_TEMP = Pathname.new(ENV.fetch('HOMEBREW_TEMP', '/tmp'))
-
-if RbConfig.respond_to?(:ruby)
-  RUBY_PATH = Pathname.new(RbConfig.ruby)
-else
-  RUBY_PATH = Pathname.new(RbConfig::CONFIG["bindir"]).join(
-    RbConfig::CONFIG["ruby_install_name"] + RbConfig::CONFIG["EXEEXT"]
-  )
-end
-RUBY_BIN = RUBY_PATH.dirname
+RUBY_BIN = Pathname.new(RbConfig::CONFIG['bindir'])
+RUBY_PATH = RUBY_BIN + RbConfig::CONFIG['ruby_install_name'] + RbConfig::CONFIG['EXEEXT']
 
 if RUBY_PLATFORM =~ /darwin/
   MACOS_FULL_VERSION = `/usr/bin/sw_vers -productVersion`.chomp
@@ -92,17 +83,22 @@ HOMEBREW_USER_AGENT = "Homebrew #{HOMEBREW_VERSION} (Ruby #{RUBY_VERSION}-#{RUBY
 
 HOMEBREW_CURL_ARGS = '-f#LA'
 
-require 'tap_constants'
+HOMEBREW_TAP_FORMULA_REGEX = %r{^(\w+)/(\w+)/([^/]+)$}
+HOMEBREW_TAP_DIR_REGEX = %r{#{HOMEBREW_LIBRARY}/Taps/(\w+)-(\w+)}
+HOMEBREW_TAP_PATH_REGEX = Regexp.new(HOMEBREW_TAP_DIR_REGEX.source \
+                                     + %r{/(.*)}.source)
 
-module Homebrew
+module Homebrew extend self
   include FileUtils
-  extend self
 
   attr_accessor :failed
   alias_method :failed?, :failed
 end
 
-HOMEBREW_PULL_OR_COMMIT_URL_REGEX = %r[https://github\.com/([\w-]+)/homebrew(-[\w-]+)?/(?:pull/(\d+)|commit/[0-9a-fA-F]{4,40})]
+require 'metafiles'
+FORMULA_META_FILES = Metafiles.new
+ISSUES_URL = "https://github.com/mxcl/homebrew/wiki/troubleshooting"
+HOMEBREW_PULL_OR_COMMIT_URL_REGEX = 'https:\/\/github.com\/(\w+)\/homebrew(-\w+)?\/(pull\/(\d+)|commit\/\w{4,40})'
 
 require 'compat' unless ARGV.include? "--no-compat" or ENV['HOMEBREW_NO_COMPAT']
 

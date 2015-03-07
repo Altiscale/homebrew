@@ -1,7 +1,8 @@
 # Links any Applications (.app) found in installed prefixes to /Applications
 require 'keg'
 
-module Homebrew
+module Homebrew extend self
+
   def linkapps
     target_dir = ARGV.include?("--local") ? File.expand_path("~/Applications") : "/Applications"
 
@@ -11,19 +12,12 @@ module Homebrew
       exit 1
     end
 
-    if ARGV.named.empty?
-      racks = HOMEBREW_CELLAR.subdirs
-      kegs = racks.map do |rack|
-        keg = rack.subdirs.map { |d| Keg.new(d) }
-        next if keg.empty?
-        keg.detect(&:linked?) || keg.max {|a,b| a.version <=> b.version}
-      end
-    else
-      kegs = ARGV.kegs
-    end
+    HOMEBREW_CELLAR.subdirs.each do |rack|
+      kegs = rack.subdirs.map { |d| Keg.new(d) }
+      next if kegs.empty?
 
-    kegs.each do |keg|
-      keg = keg.opt_record if keg.optlinked?
+      keg = kegs.detect(&:linked?) || kegs.max {|a,b| a.version <=> b.version}
+
       Dir["#{keg}/*.app", "#{keg}/bin/*.app", "#{keg}/libexec/*.app"].each do |app|
         puts "Linking #{app}"
         app_name = File.basename(app)

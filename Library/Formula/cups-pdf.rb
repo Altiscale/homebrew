@@ -6,7 +6,7 @@ class CupsPdf < Formula
   sha1 '6806f0004dfed5216625ab60cfe307ded23c2f6a'
 
   # Patch derived from MacPorts.
-  patch :DATA
+  def patches; DATA; end
 
   def install
     system "#{ENV.cc} #{ENV.cflags} -o cups-pdf src/cups-pdf.c"

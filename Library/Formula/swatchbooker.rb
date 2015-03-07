@@ -6,11 +6,13 @@ class Swatchbooker < Formula
   sha1 'fd2e46c278e762dc0c3ed69f824ab620773f153e'
 
   depends_on :python
-  depends_on "pillow" => [:python, "PIL"]
+  depends_on :python => ["PIL" => 'pillow']
   depends_on 'little-cms' => 'with-python'
   depends_on 'pyqt'
 
-  patch :DATA
+  def patches
+    DATA
+  end
 
   def install
     # Tell launching shell scipts where the python library is
@@ -18,12 +20,16 @@ class Swatchbooker < Formula
       s.gsub! "/usr/lib", "#{HOMEBREW_PREFIX}/lib"
     end
 
-    system "python", "setup.py", "install", "--prefix=#{prefix}"
-    bin.env_script_all_files(libexec+'bin', :PYTHONPATH => ENV['PYTHONPATH'])
-    chmod 0755, libexec/'bin/swatchbooker'
+    python do
+      system python, "setup.py", "install", "--prefix=#{prefix}"
+    end
   end
 
-  test do
+  def caveats
+    python.standard_caveats if python
+  end
+
+  def test
     system "#{bin}/swatchbooker"
   end
 end

@@ -1,7 +1,7 @@
 require 'keg'
 require 'cmd/tap'
 
-module Homebrew
+module Homebrew extend self
   def prune
     ObserverPathnameExtension.reset_counts!
 
@@ -12,7 +12,7 @@ module Homebrew
         path.extend(ObserverPathnameExtension)
         if path.symlink?
           unless path.resolved_path_exists?
-            if path.to_s =~ Keg::INFOFILE_RX
+            if ENV['HOMEBREW_KEEP_INFO'] and path.to_s =~ Keg::INFOFILE_RX
               path.uninstall_info unless ARGV.dry_run?
             end
 
@@ -28,7 +28,7 @@ module Homebrew
       end
     end
 
-    dirs.reverse_each do |d|
+    dirs.sort.reverse_each do |d|
       if ARGV.dry_run? && d.children.empty?
         puts "Would remove (empty directory): #{d}"
       else
@@ -36,12 +36,13 @@ module Homebrew
       end
     end
 
-    repair_taps(false) unless ARGV.dry_run?
+    repair_taps unless ARGV.dry_run?
+
+    n, d = ObserverPathnameExtension.counts
 
     if ObserverPathnameExtension.total.zero?
       puts "Nothing pruned" if ARGV.verbose?
     else
-      n, d = ObserverPathnameExtension.counts
       print "Pruned #{n} symbolic links "
       print "and #{d} directories " if d > 0
       puts  "from #{HOMEBREW_PREFIX}"

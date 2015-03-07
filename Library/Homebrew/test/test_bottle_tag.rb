@@ -1,7 +1,7 @@
 require 'testing_env'
 require 'bottles'
 
-class BottleTagTests < Homebrew::TestCase
+class BottleTagTests < Test::Unit::TestCase
   def test_tag_tiger_ppc
     MacOS.stubs(:version).returns(MacOS::Version.new("10.4"))
     Hardware::CPU.stubs(:type).returns(:ppc)

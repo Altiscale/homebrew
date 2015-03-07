@@ -2,13 +2,15 @@ require 'formula'
 
 class Msdl < Formula
   homepage 'http://msdl.sourceforge.net'
-  url 'https://downloads.sourceforge.net/msdl/msdl-1.2.7-r2.tar.gz'
+  url 'http://downloads.sourceforge.net/msdl/msdl-1.2.7-r2.tar.gz'
   version '1.2.7-r2'
   sha1 'd30a637fc8be4ea80ddd373e428542bef15297fb'
 
   # Fixes linker error under clang; apparently reported upstream:
-  # https://github.com/Homebrew/homebrew/pull/13907
-  patch :DATA
+  # https://github.com/mxcl/homebrew/pull/13907
+  def patches
+    DATA
+  end
 
   def install
     system "./configure", "--disable-dependency-tracking",

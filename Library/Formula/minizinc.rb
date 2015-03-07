@@ -7,9 +7,11 @@ class Minizinc < Formula
 
   depends_on :arch => :x86_64
 
-  # remove echoed recommendations about linking directories
-  # add installation location as parameter of SETUP script
-  patch :DATA
+  def patches
+    # remove echoed recommendations about linking directories
+    # add installation location as parameter of SETUP script
+    DATA
+  end
 
   def install
     system "sh", "SETUP", libexec
@@ -19,7 +21,7 @@ class Minizinc < Formula
     (bin/'private').unlink
   end
 
-  test do
+  def test
     system "#{bin}/mzn2fzn", "--help"
   end
 end

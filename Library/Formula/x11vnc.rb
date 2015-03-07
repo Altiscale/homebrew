@@ -2,31 +2,23 @@ require 'formula'
 
 class X11vnc < Formula
   homepage 'http://www.karlrunge.com/x11vnc/'
-  url 'https://downloads.sourceforge.net/project/libvncserver/x11vnc/0.9.13/x11vnc-0.9.13.tar.gz'
+  url 'http://sourceforge.net/projects/libvncserver/files/x11vnc/0.9.13/x11vnc-0.9.13.tar.gz'
   sha1 'f011d81488ac94dc8dce2d88739c23bd85a976fa'
 
-  depends_on :x11 => :recommended
   depends_on 'jpeg'
 
   # Patch solid.c so a non-void function returns a NULL instead of a void.
   # An email has been sent to the maintainers about this issue.
-  patch :DATA
+  def patches
+    DATA
+  end
 
   def install
-    args = [
-      "--disable-debug",
-      "--disable-dependency-tracking",
-      "--prefix=#{prefix}",
-      "--mandir=#{man}"
-    ]
-
-    if build.with? 'x11'
-      args << "--with-x"
-    else
-      args << "--without-x"
-    end
-
-    system "./configure", *args
+    system "./configure", "--disable-debug",
+                          "--disable-dependency-tracking",
+                          "--without-x",
+                          "--prefix=#{prefix}",
+                          "--mandir=#{man}"
     system "make"
     system "make", "MKDIRPROG=mkdir -p", "install"
   end

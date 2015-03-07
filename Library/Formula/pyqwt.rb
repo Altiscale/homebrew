@@ -2,34 +2,44 @@ require 'formula'
 
 class Pyqwt < Formula
   homepage 'http://pyqwt.sourceforge.net'
-  url 'https://downloads.sourceforge.net/project/pyqwt/pyqwt5/PyQwt-5.2.0/PyQwt-5.2.0.tar.gz'
+  url 'http://downloads.sourceforge.net/project/pyqwt/pyqwt5/PyQwt-5.2.0/PyQwt-5.2.0.tar.gz'
   sha1 '797f37c63dec660272f6a8ccfd16a017df0ad640'
 
-  depends_on :python
+  depends_on :python => :recommended
   depends_on 'qt'
   depends_on 'qwt'
   depends_on 'sip'
   depends_on 'pyqt'
 
-  # Patch to build system to allow for specific installation directories.
-  patch :p0, :DATA
+  def patches
+    # Patch to build system to allow for specific
+    #  installation directories.
+    { :p0 => DATA }
+  end
 
   def install
     cd "configure" do
-      system "python",
-             "configure.py",
-             "--module-install-path=#{lib}/python2.7/site-packages/PyQt4/Qwt5",
-             "--sip-install-path=#{share}/sip/Qwt5",
-             "--uic-install-path=#{lib}/python2.7/site-packages/PyQt4",
-             "-Q", "../qwt-5.2"
-      system "make install"
-      system 'make clean'
+      python do
+        system python,
+               "configure.py",
+               "--module-install-path=#{lib}/#{python.xy}/site-packages/PyQt4/Qwt5",
+               "--sip-install-path=#{share}/sip#{python.if3then3}/Qwt5",
+               "--uic-install-path=#{lib}/#{python.xy}/site-packages/PyQt4",
+               "-Q", "../qwt-5.2"
+        system "make install"
+        system 'make clean'
+      end
     end
   end
 
-  test do
-    ENV["PYTHONPATH"] = lib+"python2.7/site-packages"
-    system "python", "-c", "from PyQt4 import Qwt5 as Qwt"
+  def caveats
+    python.standard_caveats if python
+  end
+
+  def test
+    python do
+      system python, "-c", "from PyQt4 import Qwt5 as Qwt"
+    end
   end
 end
 

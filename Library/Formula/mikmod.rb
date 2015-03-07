@@ -1,17 +1,11 @@
-require "formula"
+require 'formula'
 
 class Mikmod < Formula
-  homepage "http://mikmod.raphnet.net/"
-  url "https://downloads.sourceforge.net/project/mikmod/mikmod/3.2.6/mikmod-3.2.6.tar.gz"
-  sha1 "55677382ab3e6d5ed35c520669e2cedd395a8ebb"
+  homepage 'http://mikmod.raphnet.net/'
+  url 'http://sourceforge.net/projects/mikmod/files/mikmod/3.2.4/mikmod-3.2.4.tar.gz'
+  sha1 '7d37c60d96c83ea38b36845a5fb7e5c757b42233'
 
-  bottle do
-    sha1 "81085407e9a27cf49e46cee5ec0d7b6c613cccc1" => :mavericks
-    sha1 "c16208a4e40528c2ef2d70d404b80432bc37f2e2" => :mountain_lion
-    sha1 "fcb7a780fc126c97fdd5c8004785249c6ad5375a" => :lion
-  end
-
-  depends_on "libmikmod"
+  depends_on 'libmikmod'
 
   def install
     system "./configure", "--disable-debug", "--disable-dependency-tracking",
@@ -20,7 +14,7 @@ class Mikmod < Formula
     system "make install"
   end
 
-  test do
+  def test
     system "#{bin}/mikmod", "-V"
   end
 end

@@ -16,7 +16,7 @@ class Sdhash < Formula
     man1.install Dir['man/*.1']
   end
 
-  test do
+  def test
     system "#{bin}/sdhash"
   end
 end

@@ -10,8 +10,4 @@ class Jsmin < Formula
     system ENV.cc, 'jsmin.c', '-o', 'jsmin'
     bin.install 'jsmin'
   end
-
-  test do
-    assert_equal "\nvar i=0;", pipe_output(bin/"jsmin", "var i = 0; // comment")
-  end
 end

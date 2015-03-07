@@ -2,14 +2,8 @@ require 'formula'
 
 class Xapian < Formula
   homepage 'http://xapian.org'
-  url 'http://oligarchy.co.uk/xapian/1.2.19/xapian-core-1.2.19.tar.xz'
-  sha1 'a8679cd0f708e32f2ec76bcdc198cd9fa2e1d65e'
-
-  bottle do
-    sha1 "51971954b89b767f45c0cdbec9b3bc39c4704d2e" => :yosemite
-    sha1 "90cc658d5639598783c165938edce758f44657f4" => :mavericks
-    sha1 "fd032717423f8440865e9b6b3e82b3d1b70f8fad" => :mountain_lion
-  end
+  url 'http://oligarchy.co.uk/xapian/1.2.15/xapian-core-1.2.15.tar.gz'
+  sha1 '3d2ea66e9930451dcac4b96f321284f3dee98d51'
 
   option "java",   "Java bindings"
   option "php",    "PHP bindings"
@@ -18,8 +12,8 @@ class Xapian < Formula
   depends_on :python => :optional
 
   resource 'bindings' do
-    url 'http://oligarchy.co.uk/xapian/1.2.19/xapian-bindings-1.2.19.tar.xz'
-    sha1 '5aa4a5f8d2f8dbc604f7e785a087668543ede9a1'
+    url 'http://oligarchy.co.uk/xapian/1.2.15/xapian-bindings-1.2.15.tar.gz'
+    sha1 '88424067be668f3566b5921099d82032a7a88289'
   end
 
   skip_clean :la
@@ -58,10 +52,7 @@ class Xapian < Formula
       end
 
       if build.with? 'python'
-        (lib+'python2.7/site-packages').mkpath
-        ENV['PYTHON_LIB'] = lib+'python2.7/site-packages'
-        # configure looks for python2 and system python doesn't install one
-        ENV["PYTHON"] = which "python"
+        ENV['PYTHON_LIB'] = python.site_packages
         args << "--with-python"
       else
         args << "--without-python"
@@ -80,12 +71,16 @@ class Xapian < Formula
   end
 
   def caveats
+    s = ''
+    s += python.standard_caveats if python
     if build.include? 'ruby'
-      <<-EOS.undent
+      s += <<-EOS.undent
         You may need to add the Ruby bindings to your RUBYLIB from:
           #{HOMEBREW_PREFIX}/lib/ruby/site_ruby
 
       EOS
     end
+    return s.empty? ? nil : s
   end
+
 end

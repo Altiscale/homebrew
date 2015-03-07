@@ -13,7 +13,7 @@ class Htpdate < Formula
                    "install"
   end
 
-  test do
+  def test
     system "#{bin}/htpdate", "-h"
   end
 end

@@ -4,7 +4,6 @@ class Freediameter < Formula
   homepage 'http://www.freediameter.net'
   url 'http://www.freediameter.net/hg/freeDiameter/archive/1.2.0.tar.gz'
   sha1 '687bd9d551eb4261c3600fcbe35ea519b711e9f7'
-  revision 2
 
   head 'http://www.freediameter.net/hg/freeDiameter', :using => :hg
 
@@ -15,7 +14,7 @@ class Freediameter < Formula
   depends_on 'libgcrypt'
   depends_on 'libidn'
 
-  if build.with? "all-extensions"
+  if build.include? 'with-all-extensions'
     depends_on :postgresql
     depends_on :mysql
     depends_on 'swig' => :build
@@ -28,7 +27,7 @@ class Freediameter < Formula
       -DDISABLE_SCTP=ON
     ]
 
-    args << '-DALL_EXTENSIONS=ON' if build.with? "all-extensions"
+    args << '-DALL_EXTENSIONS=ON' if build.include? 'with-all-extensions'
     args << '..'
 
     mkdir 'build' do
@@ -39,7 +38,7 @@ class Freediameter < Formula
 
     prefix.install 'doc', 'contrib'
 
-    unless File.exist?(etc/'freeDiameter.conf')
+    unless File.exists?(etc/'freeDiameter.conf')
       cp prefix/'doc/freediameter.conf.sample', etc/'freeDiameter.conf'
     end
 
@@ -68,7 +67,7 @@ class Freediameter < Formula
         <string>#{plist_name}</string>
         <key>ProgramArguments</key>
         <array>
-          <string>#{opt_bin}/freeDiameterd</string>
+          <string>#{opt_prefix}/bin/freeDiameterd</string>
         </array>
         <key>KeepAlive</key>
         <dict>

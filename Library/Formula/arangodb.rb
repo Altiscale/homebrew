@@ -1,39 +1,36 @@
 require 'formula'
 
 class Arangodb < Formula
-  homepage 'http://www.arangodb.com/'
-  url 'https://www.arangodb.com/repositories/Source/ArangoDB-2.4.4.tar.gz'
-  sha1 '013fecc546bd35e925e550817a81de7f3fb3da93'
+  homepage 'http://www.arangodb.org/'
+  url 'https://www.arangodb.org/repositories/Source/ArangoDB-1.4.3.tar.gz'
+  sha1 '67abf1cf18dc19c11e3bde41a1fa4792fa4367d4'
 
-  head "https://github.com/arangodb/arangodb.git", :branch => 'unstable'
+  head "https://github.com/triAGENS/ArangoDB.git", :branch => 'unstable'
 
-  bottle do
-    sha1 "9e401f1681722fbd857bf518ca64bce833526240" => :yosemite
-    sha1 "f4928053d3489132fec0663427023377cbce91c9" => :mavericks
-    sha1 "45b40c888f91f617d51279aa514b8c02887243e5" => :mountain_lion
+  depends_on 'icu4c'
+  depends_on 'libev'
+
+  def suffix
+    if build.stable?
+      return ""
+    else
+      return "-" + (build.devel? ? version : "unstable")
+    end
   end
 
-  depends_on 'go' => :build
-  depends_on 'openssl'
-
-  needs :cxx11
-
   def install
-    # clang on 10.8 will still try to build against libstdc++,
-    # which fails because it doesn't have the C++0x features
-    # arangodb requires.
-    ENV.libcxx
-
     args = %W[
       --disable-dependency-tracking
       --prefix=#{prefix}
       --disable-relative
+      --disable-all-in-one-icu
+      --disable-all-in-one-libev
+      --enable-all-in-one-v8
       --enable-mruby
       --datadir=#{share}
       --localstatedir=#{var}
+      --program-suffix=#{suffix}
     ]
-
-    args << "--program-suffix=unstable" if build.head?
 
     system "./configure", *args
     system "make install"
@@ -42,11 +39,30 @@ class Arangodb < Formula
     (var/'log/arangodb').mkpath
   end
 
-  def post_install
-    system "#{sbin}/arangod", "--upgrade", "--log.file", "-"
-  end
+  plist_options :manual => "#{HOMEBREW_PREFIX}/opt/arangodb/sbin/arangod"
 
-  plist_options :manual => "#{HOMEBREW_PREFIX}/opt/arangodb/sbin/arangod --log.file -"
+  def caveats; <<-EOS.undent
+    ArangoDB (http://www.arangodb.org)
+      A universal open-source database with a flexible data model for documents,
+      graphs, and key-values.
+
+    First Steps with ArangoDB:
+      http:/www.arangodb.org/quickstart
+
+    Upgrading ArangoDB:
+      http://www.arangodb.org/manuals/current/Upgrading.html
+
+    Configuration file:
+      /usr/local/etc/arangodb/arangod.conf
+
+    Start ArangoDB server:
+      unix> /usr/local/sbin/arangod#{suffix}
+
+    Start ArangoDB shell client (use empty password):
+      unix> /usr/local/bin/arangosh#{suffix}
+
+    EOS
+  end
 
   def plist; <<-EOS.undent
     <?xml version="1.0" encoding="UTF-8"?>
@@ -59,7 +75,7 @@ class Arangodb < Formula
         <string>#{plist_name}</string>
         <key>ProgramArguments</key>
         <array>
-          <string>#{opt_sbin}/arangod</string>
+          <string>#{opt_prefix}/sbin/arangod</string>
           <string>-c</string>
           <string>#{etc}/arangodb/arangod.conf</string>
         </array>

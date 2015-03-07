@@ -2,10 +2,8 @@ require 'formula'
 
 class Tsung < Formula
   homepage 'http://tsung.erlang-projects.org/'
-  url 'http://tsung.erlang-projects.org/dist/tsung-1.5.1.tar.gz'
-  sha1 'a997b76399dc40d3bda27d84c701c795ee40b808'
-
-  head 'https://github.com/processone/tsung.git'
+  url 'http://tsung.erlang-projects.org/dist/tsung-1.5.0.tar.gz'
+  sha1 '29cc209045ae7bc4aea1c9ab8269758135dbde27'
 
   depends_on 'erlang'
   depends_on 'gnuplot'

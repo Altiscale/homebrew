@@ -1,45 +1,59 @@
+require 'formula'
+
 class Nginx < Formula
-  homepage "http://nginx.org/"
-  url "http://nginx.org/download/nginx-1.6.2.tar.gz"
-  sha1 "1a5458bc15acf90eea16353a1dd17285cf97ec35"
+  homepage 'http://nginx.org/'
+  url 'http://nginx.org/download/nginx-1.4.4.tar.gz'
+  sha1 '304d5991ccde398af2002c0da980ae240cea9356'
 
   devel do
-    url "http://nginx.org/download/nginx-1.7.10.tar.gz"
-    sha1 "df9d4feab4386b0c10a7817a1d765b5a1fdbd780"
+    url 'http://nginx.org/download/nginx-1.5.7.tar.gz'
+    sha1 '4dd04c73c3081277fe9c98c4a386c8baf956f5ca'
   end
 
-  head "http://hg.nginx.org/nginx/", :using => :hg
-
-  bottle do
-    revision 1
-    sha1 "67f757d71e7372b8ccd390c63c2d604792fde33e" => :yosemite
-    sha1 "25cc325ec468f84edd9300369a1845a87109c1d0" => :mavericks
-    sha1 "a75d729e45f85ccaf5ad53095d52b4ce1ae455f2" => :mountain_lion
-  end
+  head 'http://hg.nginx.org/nginx/', :using => :hg
 
   env :userpaths
 
-  # Before submitting more options to this formula please check they aren't
-  # already in Homebrew/homebrew-nginx/nginx-full:
-  # https://github.com/Homebrew/homebrew-nginx/blob/master/nginx-full.rb
-  option "with-passenger", "Compile with support for Phusion Passenger module"
-  option "with-webdav", "Compile with support for WebDAV module"
-  option "with-debug", "Compile with support for debug log"
-  option "with-spdy", "Compile with support for SPDY module"
-  option "with-gunzip", "Compile with support for gunzip module"
+  option 'with-passenger', 'Compile with support for Phusion Passenger module'
+  option 'with-webdav', 'Compile with support for WebDAV module'
+  option 'with-debug', 'Compile with support for debug log'
+  option 'with-spdy', 'Compile with support for SPDY module'
+  option 'with-gunzip', 'Compile with support for gunzip module'
 
-  depends_on "pcre"
-  depends_on "passenger" => :optional
-  depends_on "openssl"
+  depends_on 'pcre'
+  depends_on 'passenger' => :optional
+  # SPDY needs openssl >= 1.0.1 for NPN; see:
+  # https://tools.ietf.org/agenda/82/slides/tls-3.pdf
+  # http://www.openssl.org/news/changelog.html
+  depends_on 'openssl' if build.with? 'spdy'
+
+  skip_clean 'logs'
+
+  def passenger_config_args
+    passenger_root = `passenger-config --root`.chomp
+
+    if File.directory?(passenger_root)
+      return "--add-module=#{passenger_root}/ext/nginx"
+    end
+
+    puts "Unable to install nginx with passenger support. The passenger"
+    puts "gem must be installed and passenger-config must be in your path"
+    puts "in order to continue."
+    exit
+  end
 
   def install
     # Changes default port to 8080
-    inreplace "conf/nginx.conf", "listen       80;", "listen       8080;"
+    inreplace 'conf/nginx.conf', 'listen       80;', 'listen       8080;'
 
-    pcre = Formula["pcre"]
-    openssl = Formula["openssl"]
-    cc_opt = "-I#{pcre.include} -I#{openssl.include}"
-    ld_opt = "-L#{pcre.lib} -L#{openssl.lib}"
+    cc_opt = "-I#{HOMEBREW_PREFIX}/include"
+    ld_opt = "-L#{HOMEBREW_PREFIX}/lib"
+
+    if build.with? 'spdy'
+      openssl_path = Formula.factory("openssl").opt_prefix
+      cc_opt += " -I#{openssl_path}/include"
+      ld_opt += " -L#{openssl_path}/lib"
+    end
 
     args = ["--prefix=#{prefix}",
             "--with-http_ssl_module",
@@ -58,18 +72,14 @@ class Nginx < Formula
             "--http-scgi-temp-path=#{var}/run/nginx/scgi_temp",
             "--http-log-path=#{var}/log/nginx/access.log",
             "--error-log-path=#{var}/log/nginx/error.log",
-            "--with-http_gzip_static_module",
-           ]
+            "--with-http_gzip_static_module"
+          ]
 
-    if build.with? "passenger"
-      nginx_ext = `#{Formula["passenger"].opt_bin}/passenger-config --nginx-addon-dir`.chomp
-      args << "--add-module=#{nginx_ext}"
-    end
-
-    args << "--with-http_dav_module" if build.with? "webdav"
-    args << "--with-debug" if build.with? "debug"
-    args << "--with-http_spdy_module" if build.with? "spdy"
-    args << "--with-http_gunzip_module" if build.with? "gunzip"
+    args << passenger_config_args if build.include? 'with-passenger'
+    args << "--with-http_dav_module" if build.include? 'with-webdav'
+    args << "--with-debug" if build.include? 'with-debug'
+    args << "--with-http_spdy_module" if build.include? 'with-spdy'
+    args << "--with-http_gunzip_module" if build.include? 'with-gunzip'
 
     if build.head?
       system "./auto/configure", *args
@@ -77,61 +87,61 @@ class Nginx < Formula
       system "./configure", *args
     end
     system "make"
-    system "make", "install"
+    system "make install"
     man8.install "objs/nginx.8"
-    (var/"run/nginx").mkpath
-  end
+    (var/'run/nginx').mkpath
 
-  def post_install
-    # nginx's docroot is #{prefix}/html, this isn't useful, so we symlink it
+    # nginx’s docroot is #{prefix}/html, this isn't useful, so we symlink it
     # to #{HOMEBREW_PREFIX}/var/www. The reason we symlink instead of patching
     # is so the user can redirect it easily to something else if they choose.
-    html = prefix/"html"
-    dst  = var/"www"
-
-    if dst.exist?
-      html.rmtree
-      dst.mkpath
-    else
-      dst.dirname.mkpath
-      html.rename(dst)
+    prefix.cd do
+      dst = HOMEBREW_PREFIX/"var/www"
+      if not dst.exist?
+        dst.dirname.mkpath
+        mv "html", dst
+      else
+        rm_rf "html"
+        dst.mkpath
+      end
+      Pathname.new("#{prefix}/html").make_relative_symlink(dst)
     end
 
-    prefix.install_symlink dst => "html"
-
-    # for most of this formula's life the binary has been placed in sbin
+    # for most of this formula’s life the binary has been placed in sbin
     # and Homebrew used to suggest the user copy the plist for nginx to their
     # ~/Library/LaunchAgents directory. So we need to have a symlink there
     # for such cases
-    if rack.subdirs.any? { |d| d.join("sbin").directory? }
-      sbin.install_symlink bin/"nginx"
+    if (HOMEBREW_CELLAR/'nginx').subdirs.any?{|d| (d/:sbin).directory? }
+      sbin.mkpath
+      sbin.cd do
+        (sbin/'nginx').make_relative_symlink(bin/'nginx')
+      end
     end
   end
 
   test do
-    system "#{bin}/nginx", "-t"
+    system "#{bin}/nginx", '-t'
   end
 
   def passenger_caveats; <<-EOS.undent
 
-    To activate Phusion Passenger, add this to #{etc}/nginx/nginx.conf, inside the 'http' context:
-      passenger_root #{Formula["passenger"].opt_libexec}/lib/phusion_passenger/locations.ini;
-      passenger_ruby /usr/bin/ruby;
+    To activate Phusion Passenger, add this to #{etc}/nginx/nginx.conf:
+      passenger_root #{HOMEBREW_PREFIX}/opt/passenger/libexec
+      passenger_ruby /usr/bin/ruby
     EOS
   end
 
   def caveats
     s = <<-EOS.undent
-    Docroot is: #{var}/www
+    Docroot is: #{HOMEBREW_PREFIX}/var/www
 
-    The default port has been set in #{etc}/nginx/nginx.conf to 8080 so that
+    The default port has been set in #{HOMEBREW_PREFIX}/etc/nginx/nginx.conf to 8080 so that
     nginx can run without sudo.
     EOS
-    s << passenger_caveats if build.with? "passenger"
+    s << passenger_caveats if build.include? 'with-passenger'
     s
   end
 
-  plist_options :manual => "nginx"
+  plist_options :manual => 'nginx'
 
   def plist; <<-EOS.undent
     <?xml version="1.0" encoding="UTF-8"?>
@@ -146,7 +156,7 @@ class Nginx < Formula
         <false/>
         <key>ProgramArguments</key>
         <array>
-            <string>#{opt_bin}/nginx</string>
+            <string>#{opt_prefix}/bin/nginx</string>
             <string>-g</string>
             <string>daemon off;</string>
         </array>

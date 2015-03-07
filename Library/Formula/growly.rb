@@ -10,7 +10,7 @@ class Growly < Formula
     bin.install 'growly'
   end
 
-  test do
+  def test
     system "#{bin}/growly", "echo Hello, world!"
   end
 end

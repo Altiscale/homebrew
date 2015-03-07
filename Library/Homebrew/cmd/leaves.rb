@@ -2,20 +2,20 @@ require 'formula'
 require 'tab'
 require 'set'
 
-module Homebrew
+module Homebrew extend self
   def leaves
     installed = Formula.installed
     deps_of_installed = Set.new
 
     installed.each do |f|
       deps = []
-      tab = Tab.for_formula(f)
 
       f.deps.each do |dep|
         if dep.optional? || dep.recommended?
-          deps << dep.to_formula.name if tab.with?(dep)
+          tab = Tab.for_formula(f)
+          deps << dep.name if tab.with?(dep.name)
         else
-          deps << dep.to_formula.name
+          deps << dep.name
         end
       end
 

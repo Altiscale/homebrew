@@ -15,7 +15,8 @@ module MacCPUs
   # These methods use info spewed out by sysctl.
   # Look in <mach/machine.h> for decoding info.
   def type
-    case sysctl_int("hw.cputype")
+    @type ||= `/usr/sbin/sysctl -n hw.cputype`.to_i
+    case @type
     when 7
       :intel
     when 18
@@ -27,7 +28,7 @@ module MacCPUs
 
   def family
     if intel?
-      case sysctl_int("hw.cpufamily")
+      case @intel_family ||= `/usr/sbin/sysctl -n hw.cpufamily`.to_i
       when 0x73d67300 # Yonah: Core Solo/Duo
         :core
       when 0x426f69ef # Merom: Core 2 Duo
@@ -48,7 +49,7 @@ module MacCPUs
         :dunno
       end
     elsif ppc?
-      case sysctl_int("hw.cpusubtype")
+      case @ppc_family ||= `/usr/sbin/sysctl -n hw.cpusubtype`.to_i
       when 9
         :g3  # PowerPC 750
       when 10
@@ -57,7 +58,7 @@ module MacCPUs
         :g4e # PowerPC 7450
       when 100
         # This is the only 64-bit PPC CPU type, so it's useful
-        # to distinguish in `brew config` output and in bottle tags
+        # to distinguish in `brew --config` output and in bottle tags
         MacOS.prefer_64_bit? ? :g5_64 : :g5  # PowerPC 970
       else
         :dunno
@@ -66,15 +67,15 @@ module MacCPUs
   end
 
   def extmodel
-    sysctl_int("machdep.cpu.extmodel")
+    @extmodel ||= `/usr/sbin/sysctl -n machdep.cpu.extmodel`.to_i
   end
 
   def cores
-    sysctl_int("hw.ncpu")
+    @cores ||= `/usr/sbin/sysctl -n hw.ncpu`.to_i
   end
 
   def bits
-    sysctl_bool("hw.cpu64bit_capable") ? 64 : 32
+    @bits ||= sysctl_bool("hw.cpu64bit_capable") ? 64 : 32
   end
 
   def arch_32_bit
@@ -95,14 +96,6 @@ module MacCPUs
     else
       [arch_32_bit, arch_64_bit].extend ArchitectureListExtension
     end
-  end
-
-  def features
-    @features ||= sysctl_n(
-      "machdep.cpu.features",
-      "machdep.cpu.extfeatures",
-      "machdep.cpu.leaf7_features"
-    ).split(" ").map { |s| s.downcase.to_sym }
   end
 
   def aes?
@@ -137,19 +130,16 @@ module MacCPUs
     sysctl_bool('hw.optional.sse4_2')
   end
 
-  private
+  protected
 
-  def sysctl_bool(key)
-    sysctl_int(key) == 1
-  end
-
-  def sysctl_int(key)
-    sysctl_n(key).to_i
-  end
-
-  def sysctl_n(*keys)
-    (@properties ||= {}).fetch(keys) do
-      @properties[keys] = Utils.popen_read("/usr/sbin/sysctl", "-n", *keys)
+  def sysctl_bool(property)
+    (@properties ||= {}).fetch(property) do
+      result = nil
+      IO.popen("/usr/sbin/sysctl -n '#{property}' 2>/dev/null") do |f|
+        result = f.gets.to_i # should be 0 or 1
+      end
+      # sysctl call succeded and printed 1
+      @properties[property] = $?.success? && result == 1
     end
   end
 end

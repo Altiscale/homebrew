@@ -1,4 +1,4 @@
-module Homebrew
+module Homebrew extend self
   def commands
     # Find commands in Homebrew/cmd
     cmds = (HOMEBREW_REPOSITORY/"Library/Homebrew/cmd").

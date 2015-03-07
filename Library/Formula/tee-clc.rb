@@ -8,10 +8,20 @@ class TeeClc < Formula
   conflicts_with 'tiny-fugue', :because => 'both install a `tf` binary'
 
   def install
-    libexec.install "tf", "lib"
-    (libexec/"native").install "native/macosx"
-    bin.write_exec_script libexec/"tf"
-    share.install "help"
+    if build.stable?
+      install_prefix = ''
+    else
+      system 'mvn', 'assembly:assembly'
+      system 'unzip', Dir['target/tf-*.zip'], "-dtarget"
+      install_prefix = Dir['target/tf-*/'].to_s
+    end
+
+    libexec.install install_prefix/'tf'
+    libexec.install install_prefix/'lib'
+    (libexec/"native").install install_prefix/'native/macosx'
+
+    bin.write_exec_script libexec/'tf'
+    share.install 'help'
   end
 
   test do

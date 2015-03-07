@@ -2,18 +2,8 @@ require 'formula'
 
 class Moc < Formula
   homepage 'http://moc.daper.net'
-
-  stable do
-    url "http://ftp.daper.net/pub/soft/moc/stable/moc-2.5.0.tar.bz2"
-    sha1 "a02c10075541995771dbdccb7f2d0ecd19d70b81"
-  end
-
-  bottle do
-    sha1 "1a08c15f965d74614f142ee8ec2bea75b5d999cd" => :yosemite
-    sha1 "7168fc76526f705ecc4ee766e2f6d7a37e271b46" => :mavericks
-    sha1 "876c8a6cbf642db773e6c65794e7632422e9cafa" => :mountain_lion
-  end
-
+  url 'http://ftp.daper.net/pub/soft/moc/unstable/moc-2.5.0-beta1.tar.bz2'
+  sha1 '4030a1fa5c7cfef06909c54d8c7a1fbb93f23caa'
   head 'svn://daper.net/moc/trunk'
 
   option 'with-ncurses', 'Build with wide character support.'
@@ -35,7 +25,13 @@ class Moc < Formula
   depends_on 'faad2' => :optional
   depends_on 'timidity' => :optional
   depends_on 'libmagic' => :optional
-  depends_on 'homebrew/dupes/ncurses' => :optional
+  # TODO: make this :optional when it works for tap dependencies.
+  depends_on 'homebrew/dupes/ncurses' if build.with? 'ncurses'
+
+  def patches
+    # Patches up to r2544 (HEAD at 2013-08-13)
+    { :p0 => 'https://gist.github.com/toroidal-code/6310844/raw/23c460144b64040eb6c3117693fd7e129a462b26/ffmpeg-patch.diff' }
+  end unless build.head?
 
   def install
     system "autoreconf", "-i" # required to fix ffmpeg issues (updated ffmpeg.m4)

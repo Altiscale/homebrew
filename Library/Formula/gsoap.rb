@@ -1,17 +1,17 @@
-require "formula"
+require 'formula'
 
 class Gsoap < Formula
-  homepage "http://www.cs.fsu.edu/~engelen/soap.html"
-  url "https://downloads.sourceforge.net/project/gsoap2/gSOAP/gsoap_2.8.18.zip"
-  sha1 "672d81f1b15eb64f2b55f2ba3217be43ae3b197a"
+  homepage 'http://www.cs.fsu.edu/~engelen/soap.html'
+  url 'http://downloads.sourceforge.net/project/gsoap2/gSOAP/gsoap_2.8.16.zip'
+  sha1 '8024f03dedef361a5271a7c0b26f961fd278703c'
 
   def install
     ENV.deparallelize
-    system "./configure", "--prefix=#{prefix}"
-    system "make install"
+    system './configure', "--prefix=#{prefix}"
+    system 'make install'
   end
 
-  test do
+  def test
     system "#{bin}/soapcpp2", "-v"
   end
 end

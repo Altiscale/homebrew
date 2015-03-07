@@ -12,7 +12,7 @@ class Csup < Formula
     man1.install "csup.1"
   end
 
-  test do
+  def test
     system "#{bin}/csup", "-v"
   end
 end

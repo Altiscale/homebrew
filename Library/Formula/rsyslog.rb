@@ -9,7 +9,9 @@ class Rsyslog < Formula
   depends_on 'libestr'
   depends_on 'json-c'
 
-  patch :DATA
+  def patches
+    DATA
+  end
 
   def install
     args = %W[

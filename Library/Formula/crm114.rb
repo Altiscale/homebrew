@@ -8,7 +8,6 @@ class Crm114 < Formula
   depends_on 'tre'
 
   def install
-    ENV.append 'CFLAGS', '-std=gnu89'
     inreplace 'Makefile', 'LDFLAGS += -static -static-libgcc', ''
     bin.mkpath
     system "make", "prefix=#{prefix}", "install"

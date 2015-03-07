@@ -6,7 +6,9 @@ class DvdxrwTools < Formula
   sha1 '6400e013934ff589b4b224eced03fd9f42ed719b'
 
   # Respect $PREFIX
-  patch :DATA
+  def patches
+    DATA
+  end
 
   def install
     bin.mkpath

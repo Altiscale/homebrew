@@ -9,7 +9,9 @@ class Devtodo < Formula
 
   # Fix invalid regex. See http://swapoff.org/ticket/54
   # @adamv - this url not responding 3/17/2012
-  patch :DATA
+  def patches
+    DATA
+  end
 
   def install
     # Rename Regex.h to Regex.hh to avoid case-sensitivity confusion with regex.h

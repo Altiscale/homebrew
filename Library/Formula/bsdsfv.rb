@@ -2,13 +2,15 @@ require 'formula'
 
 class Bsdsfv < Formula
   homepage 'http://bsdsfv.sourceforge.net/'
-  url 'https://downloads.sourceforge.net/project/bsdsfv/bsdsfv/1.18/bsdsfv-1.18.tar.gz'
+  url 'http://downloads.sourceforge.net/project/bsdsfv/bsdsfv/1.18/bsdsfv-1.18.tar.gz'
   sha1 '5e72c5e12bce2d5f77469d8f2425064a0ea6fc1e'
 
   # bug report:
   # http://sourceforge.net/tracker/?func=detail&aid=2887842&group_id=7211&atid=107211
   # Patch from MacPorts
-  patch :DATA
+  def patches
+    DATA
+  end
 
   def install
     bin.mkpath

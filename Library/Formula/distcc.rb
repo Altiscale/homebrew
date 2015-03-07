@@ -11,18 +11,21 @@ end
 
 class Distcc < Formula
   homepage 'http://code.google.com/p/distcc/'
-  url 'https://distcc.googlecode.com/files/distcc-3.2rc1.tar.gz'
+  url 'http://distcc.googlecode.com/files/distcc-3.2rc1.tar.gz'
   sha1 '7cd46fe0926a3a859a516274e6ae59fa8ba0262d'
 
+  depends_on :python
   depends_on PythonWithoutPPC
 
   def install
-    # Make sure python stuff is put into the Cellar.
-    # --root triggers a bug and installs into HOMEBREW_PREFIX/lib/python2.7/site-packages instead of the Cellar.
-    inreplace 'Makefile.in', '--root="$$DESTDIR"', ""
+    python do
+      # Make sure python stuff is put into the Cellar.
+      # --root triggers a bug and installs into HOMEBREW_PREFIX/lib/python2.7/site-packages instead of the Cellar.
+      inreplace 'Makefile.in', '--root="$$DESTDIR"', ""
 
-    system "./configure", "--prefix=#{prefix}"
-    system "make install"
+      system "./configure", "--prefix=#{prefix}"
+      system "make install"
+    end
     plist_path.write startup_plist
     plist_path.chmod 0644
   end
@@ -58,7 +61,7 @@ class Distcc < Formula
     EOS
   end
 
-  test do
-    system "#{bin}/distcc", "--version"
+  def test
+    system "#{bin}/distcc"
   end
 end

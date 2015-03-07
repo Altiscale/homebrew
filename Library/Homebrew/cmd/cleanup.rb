@@ -2,16 +2,14 @@ require 'formula'
 require 'keg'
 require 'bottles'
 
-module Homebrew
+module Homebrew extend self
+
   def cleanup
-    # individual cleanup_ methods should also check for the existence of the
-    # appropriate directories before assuming they exist
     return unless HOMEBREW_CELLAR.directory?
 
     if ARGV.named.empty?
       cleanup_cellar
       cleanup_cache
-      cleanup_logs
       unless ARGV.dry_run?
         cleanup_lockfiles
         rm_DS_Store
@@ -21,25 +19,10 @@ module Homebrew
     end
   end
 
-  def cleanup_logs
-    return unless HOMEBREW_LOGS.directory?
-    time = Time.now - 2 * 7 * 24 * 60 * 60 # two weeks
-    HOMEBREW_LOGS.subdirs.each do |dir|
-      if dir.mtime < time
-        if ARGV.dry_run?
-          puts "Would remove: #{dir}"
-        else
-          puts "Removing: #{dir}..."
-          dir.rmtree
-        end
-      end
-    end
-  end
-
   def cleanup_cellar
     HOMEBREW_CELLAR.subdirs.each do |rack|
       begin
-        cleanup_formula Formulary.factory(rack.basename.to_s)
+        cleanup_formula Formula.factory(rack.basename.to_s)
       rescue FormulaUnavailableError
         # Don't complain about directories from DIY installs
       end
@@ -48,7 +31,7 @@ module Homebrew
 
   def cleanup_formula f
     if f.installed?
-      eligible_kegs = f.rack.subdirs.map { |d| Keg.new(d) }.select { |k| f.pkg_version > k.version }
+      eligible_kegs = f.rack.subdirs.map { |d| Keg.new(d) }.select { |k| f.version > k.version }
       eligible_kegs.each do |keg|
         if f.can_cleanup?
           cleanup_keg(keg)
@@ -70,18 +53,17 @@ module Homebrew
       puts "Would remove: #{keg}"
     else
       puts "Removing: #{keg}..."
-      keg.uninstall
+      keg.rmtree
     end
   end
 
   def cleanup_cache
-    return unless HOMEBREW_CACHE.directory?
     HOMEBREW_CACHE.children.select(&:file?).each do |file|
       next unless (version = file.version)
       next unless (name = file.basename.to_s[/(.*)-(?:#{Regexp.escape(version)})/, 1])
 
       begin
-        f = Formulary.factory(name)
+        f = Formula.factory(name)
       rescue FormulaUnavailableError
         next
       end
@@ -111,10 +93,7 @@ module Homebrew
   end
 
   def rm_DS_Store
-    paths = %w[Cellar Frameworks Library bin etc include lib opt sbin share var].
-      map { |p| HOMEBREW_PREFIX/p }.select(&:exist?)
-    args = paths.map(&:to_s) + %w[-name .DS_Store -delete]
-    quiet_system "find", *args
+    system "find #{HOMEBREW_PREFIX} -name .DS_Store -delete 2>/dev/null"
   end
 
 end
@@ -134,7 +113,7 @@ class Formula
         select{ |ff| ff.deps.map{ |d| d.to_s }.include? name }.
         map{ |ff| ff.rack.subdirs rescue [] }.
         flatten.
-        map{ |keg_path| Tab.for_keg(keg_path).HEAD }.
+        map{ |keg_path| Tab.for_keg(keg_path).send("HEAD") }.
         include? nil
     end
   end

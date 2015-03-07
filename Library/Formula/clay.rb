@@ -15,7 +15,7 @@ class Clay < Formula
     system "make install"
   end
 
-  test do
+  def test
     system "#{bin}/clay", "-e", "println(\"Hello, Clay!\");"
   end
 end

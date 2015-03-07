@@ -2,14 +2,11 @@ require 'formula'
 
 class Mahout < Formula
   homepage 'http://mahout.apache.org/'
-  url 'http://apache.cs.utah.edu/mahout/0.9/mahout-distribution-0.9.tar.gz'
-  sha1 'b0d192a33dcc3f00439bf2ffbc313c6ef47510c3'
+  head 'http://svn.apache.org/repos/asf/mahout/trunk'
+  url 'http://apache.cs.utah.edu/mahout/0.8/mahout-distribution-0.8.tar.gz'
+  sha1 '67669fa4a8969a8b8c6ebb94fa7f5aeae96e9119'
 
-  head do
-    url 'http://svn.apache.org/repos/asf/mahout/trunk'
-    depends_on 'maven' => :build
-  end
-
+  depends_on 'maven' => :build
   depends_on 'hadoop'
 
   def install
@@ -18,7 +15,7 @@ class Mahout < Formula
       system 'mvn -DskipTests clean install'
     end
 
-    libexec.install "bin"
+    libexec.install %w[bin]
 
     if build.head?
       libexec.install Dir['buildtools/target/*.jar']

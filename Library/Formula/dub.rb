@@ -1,22 +1,26 @@
+require 'formula'
+
 class Dub < Formula
-  homepage "http://code.dlang.org/about"
-  url  "https://github.com/D-Programming-Language/dub/archive/v0.9.22.tar.gz"
-  sha1 "9a7b7c838f1241de209473c09a194d355279457b"
+  homepage 'http://registry.vibed.org/'
+  url  'https://github.com/rejectedsoftware/dub/archive/v0.9.19.tar.gz'
+  sha1 'dcf880029190180a1a4a4753237c0eb164941c98'
 
-  head "https://github.com/D-Programming-Language/dub.git", :shallow => false
+  head 'https://github.com/rejectedsoftware/dub.git'
 
-  devel do
-    url "https://github.com/D-Programming-Language/dub/archive/v0.9.22-rc.1.tar.gz"
-    sha1 "8ca2ac66675ce869cbf4930e989bb6fa41dc61b8"
-    version "0.9.22-rc.1"
+  depends_on 'pkg-config' => :build
+  depends_on 'dmd'  => :build
+
+  # patch is in upstream master
+  def patches
+    [
+      "https://github.com/rejectedsoftware/dub/commit/0e91afd52babf96128be43120dfd5f9a38b4d202.patch",
+      "https://github.com/rejectedsoftware/dub/commit/b08454b6baa5c7e9e2d5a21c943c21cb986fff23.patch",
+    ]
   end
-
-  depends_on "pkg-config" => :build
-  depends_on "dmd"  => :build
 
   def install
     system "./build.sh"
-    bin.install "bin/dub"
+    bin.install 'bin/dub'
   end
 
   test do

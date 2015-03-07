@@ -6,9 +6,8 @@ class Urlview < Formula
   mirror 'http://ftp.us.debian.org/debian/pool/main/u/urlview/urlview_0.9.orig.tar.gz'
   sha1 '323af9ba30ba87ec600531629f5dd84c720984b6'
 
-  patch do
-    url "http://ftp.aarnet.edu.au/debian/pool/main/u/urlview/urlview_0.9-19.diff.gz"
-    sha1 "96bd07bbb7cfc3416dc0ce8fa914160356f95c41"
+  def patches
+    "http://ftp.aarnet.edu.au/debian/pool/main/u/urlview/urlview_0.9-19.diff.gz"
   end
 
   def install

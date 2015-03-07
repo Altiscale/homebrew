@@ -1,12 +1,14 @@
+require 'formula'
+
 class Auctex < Formula
-  homepage "https://www.gnu.org/software/auctex/"
-  url "http://ftpmirror.gnu.org/auctex/auctex-11.88.tar.gz"
-  mirror "https://ftp.gnu.org/gnu/auctex/auctex-11.88.tar.gz"
-  sha1 "098a9751c4e00812e61d62a0184a07d9753904df"
+  homepage 'http://www.gnu.org/software/auctex/'
+  url 'http://ftpmirror.gnu.org/auctex/auctex-11.87.tar.gz'
+  mirror 'http://ftp.gnu.org/gnu/auctex/auctex-11.87.tar.gz'
+  sha1 '0be92c7d8f89d57346fe07f05a1a045ffd11cd71'
 
   head do
-    url "git://git.savannah.gnu.org/auctex.git"
-    depends_on "autoconf" => :build
+    url 'git://git.savannah.gnu.org/auctex.git'
+    depends_on :autoconf
   end
 
   depends_on :tex
@@ -14,14 +16,14 @@ class Auctex < Formula
   option "with-emacs=", "Path to an emacs binary"
 
   def which_emacs
-    emacs = ARGV.value("with-emacs") || which("emacs").to_s
-    fail "#{emacs} not found" unless File.exist? emacs
-    emacs
+    emacs = ARGV.value('with-emacs') || which('emacs').to_s
+    raise "#{emacs} not found" if not File.exists? emacs
+    return emacs
   end
 
   def install
     # configure fails if the texmf dir is not there yet
-    brew_texmf = share/"texmf"
+    brew_texmf = share + 'texmf'
     brew_texmf.mkpath
 
     system "./autogen.sh" if build.head?
@@ -33,7 +35,7 @@ class Auctex < Formula
 
     system "make"
     ENV.deparallelize # Needs a serialized install
-    system "make", "install"
+    system "make install"
   end
 
   def caveats

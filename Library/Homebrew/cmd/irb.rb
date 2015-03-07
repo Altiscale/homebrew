@@ -3,26 +3,26 @@ require 'keg'
 require 'irb'
 
 class Symbol
-  def f(*args)
-    Formulary.factory(to_s, *args)
+  def f
+    Formula.factory(self.to_s)
   end
 end
 class String
-  def f(*args)
-    Formulary.factory(self, *args)
+  def f
+    Formula.factory(self)
   end
 end
 
-module Homebrew
+module Homebrew extend self
   def irb
-    if ARGV.include? "--examples"
-      puts "'v8'.f # => instance of the v8 formula"
+    if ARGV.include? "--help"
+      puts "'v8'.f # => instance of the Ack formula"
       puts ":hub.f.installed?"
       puts ":lua.f.methods - 1.methods"
       puts ":mpd.f.recursive_dependencies.reject(&:installed?)"
     else
       ohai "Interactive Homebrew Shell"
-      puts "Example commands available with: brew irb --examples"
+      puts "Example commands available with: brew irb --help"
       IRB.start
     end
   end

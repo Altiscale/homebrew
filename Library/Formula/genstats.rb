@@ -20,7 +20,7 @@ class Genstats < Formula
     man.install('genstats.1')
   end
 
-  test do
-    system "#{bin}/genstats -h | grep folkert@vanheusden.com"
+  def test
+    system "genstats -h | grep folkert@vanheusden.com"
   end
 end

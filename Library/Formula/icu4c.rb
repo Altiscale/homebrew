@@ -1,18 +1,19 @@
+require 'formula'
+
 class Icu4c < Formula
-  homepage "http://site.icu-project.org/"
-  head "http://source.icu-project.org/repos/icu/icu/trunk/", :using => :svn
-  url "http://download.icu-project.org/files/icu4c/54.1/icu4c-54_1-src.tgz"
-  version "54.1"
-  sha1 "8c752490bbf31cea26e20246430cee67d48abe34"
+  homepage 'http://site.icu-project.org/'
+  url 'http://download.icu-project.org/files/icu4c/52.1/icu4c-52_1-src.tgz'
+  version '52.1'
+  sha1 '6de440b71668f1a65a9344cdaf7a437291416781'
+  head 'http://source.icu-project.org/repos/icu/icu/trunk/', :using => :svn
 
   bottle do
-    revision 1
-    sha1 "244dbb217c95a79f87a35df70aca493a05c9ff39" => :yosemite
-    sha1 "a963404c60a1de000c3e9d7478f6318e8f3c9291" => :mavericks
-    sha1 "fb48ee8a8fa5aa9537d4e594178bc7e62689156a" => :mountain_lion
+    sha1 '3205496d69fcf985a92954a170dc29abbbc6ae85' => :mountain_lion
+    sha1 '7188afe2066586d3c79480f591f0c373a32422a0' => :lion
+    sha1 'cd9b8955fc41b46fa57c6f3697e4689eff02c7c3' => :snow_leopard
   end
 
-  keg_only :provided_by_osx, "OS X provides libicucore.dylib (but nothing else)."
+  keg_only "Conflicts; see: https://github.com/mxcl/homebrew/issues/issue/167"
 
   option :universal
   option :cxx11
@@ -25,12 +26,8 @@ class Icu4c < Formula
     args << "--with-library-bits=64" if MacOS.prefer_64_bit?
     cd "source" do
       system "./configure", *args
-      system "make"
-      system "make", "install"
+      system "make", "VERBOSE=1"
+      system "make", "VERBOSE=1", "install"
     end
-  end
-
-  test do
-    system "#{bin}/gendict", "--uchars", "/usr/share/dict/words", "dict"
   end
 end

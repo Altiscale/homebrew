@@ -12,7 +12,9 @@ class Pxz < Formula
     cause "pxz requires OpenMP support"
   end
 
-  patch :DATA # Fixes usage of MAP_POPULATE for mmap (linux only)
+  def patches
+    DATA # Fixes usage of MAP_POPULATE for mmap (linux only)
+  end
 
   def install
     system "make", "CC=#{ENV.cc}"

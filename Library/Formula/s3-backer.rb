@@ -1,22 +1,23 @@
-require "formula"
+require 'formula'
 
 class S3Backer < Formula
-  homepage "https://code.google.com/p/s3backer/"
-  url "https://s3backer.googlecode.com/files/s3backer-1.3.7.tar.gz"
-  sha1 "c75c7e70cb38bcac41d342a2bdb63e9505ab550a"
-  revision 1
+  homepage 'http://code.google.com/p/s3backer/'
+  url 'http://s3backer.googlecode.com/files/s3backer-1.3.3.tar.gz'
+  sha1 '0aa837279c9232260a8f9d0d76097b144684044f'
 
-  depends_on "pkg-config" => :build
-  depends_on "openssl"
-  depends_on :osxfuse
+  depends_on 'pkg-config' => :build
+  depends_on 'fuse4x'
 
   def install
-    inreplace "configure", "-lfuse", "-losxfuse"
+    inreplace "configure", "-lfuse", "-lfuse4x"
     system "./configure", "--prefix=#{prefix}"
-    system "make", "install"
+    system "make install"
   end
 
-  test do
-    system "#{bin}/s3backer", "--version"
- end
+  def caveats
+    <<-EOS.undent
+      Make sure to follow the directions given by `brew info fuse4x-kext`
+      before trying to use a FUSE-based filesystem.
+    EOS
+  end
 end

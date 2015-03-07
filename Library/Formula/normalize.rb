@@ -24,7 +24,7 @@ class Normalize < Formula
     system "make install"
   end
 
-  test do
+  def test
     system "#{bin}/normalize"
   end
 end

@@ -8,7 +8,9 @@ class Xspin < Formula
 
   depends_on 'spin'
 
-  patch :DATA
+  def patches
+    DATA
+  end
 
   def install
     inreplace "xspin525.tcl", "CELLAR", prefix
