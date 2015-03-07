@@ -1,8 +1,11 @@
-require 'formula_installer'
-require 'hardware'
-require 'blacklist'
+require "blacklist"
+require "cmd/doctor"
+require "cmd/search"
+require "cmd/tap"
+require "formula_installer"
+require "hardware"
 
-module Homebrew extend self
+module Homebrew
   def install
     raise FormulaUnspecifiedError if ARGV.named.empty?
 
@@ -12,33 +15,84 @@ module Homebrew extend self
 
     ARGV.named.each do |name|
       # if a formula has been tapped ignore the blacklisting
-      if not File.file? HOMEBREW_REPOSITORY/"Library/Formula/#{name}.rb"
+      unless Formula.path(name).file?
         msg = blacklisted? name
         raise "No available formula for #{name}\n#{msg}" if msg
       end
-      if not File.exist? name and name =~ HOMEBREW_TAP_FORMULA_REGEX then
-        require 'cmd/tap'
-        begin
-          install_tap $1, $2
-        rescue AlreadyTappedError => e
-        end
+      if !File.exist?(name) && (name =~ HOMEBREW_TAP_FORMULA_REGEX \
+                                || name =~ HOMEBREW_CASK_TAP_FORMULA_REGEX)
+        install_tap $1, $2
       end
     end unless ARGV.force?
 
-    perform_preinstall_checks
     begin
-      ARGV.formulae.each do |f|
-        begin
-          install_formula(f)
-        rescue CannotInstallFormulaError => e
-          ofail e.message
+      formulae = []
+
+      if ARGV.casks.any?
+        brew_cask = Formulary.factory("brew-cask")
+        install_formula(brew_cask) unless brew_cask.installed?
+        args = []
+        args << "--force" if ARGV.force?
+        args << "--debug" if ARGV.debug?
+        args << "--verbose" if ARGV.verbose?
+
+        ARGV.casks.each do |c|
+          cmd = "brew", "cask", "install", c, *args
+          ohai cmd.join " "
+          system(*cmd)
         end
       end
+
+      ARGV.formulae.each do |f|
+        # head-only without --HEAD is an error
+        if not ARGV.build_head? and f.stable.nil? and f.devel.nil?
+          raise <<-EOS.undent
+          #{f.name} is a head-only formula
+          Install with `brew install --HEAD #{f.name}`
+          EOS
+        end
+
+        # devel-only without --devel is an error
+        if not ARGV.build_devel? and f.stable.nil? and f.head.nil?
+          raise <<-EOS.undent
+          #{f.name} is a devel-only formula
+          Install with `brew install --devel #{f.name}`
+          EOS
+        end
+
+        if ARGV.build_stable? and f.stable.nil?
+          raise "#{f.name} has no stable download, please choose --devel or --HEAD"
+        end
+
+        # --HEAD, fail with no head defined
+        if ARGV.build_head? and f.head.nil?
+          raise "No head is defined for #{f.name}"
+        end
+
+        # --devel, fail with no devel defined
+        if ARGV.build_devel? and f.devel.nil?
+          raise "No devel block is defined for #{f.name}"
+        end
+
+        if f.installed?
+          msg = "#{f.name}-#{f.installed_version} already installed"
+          msg << ", it's just not linked" unless f.linked_keg.symlink? or f.keg_only?
+          opoo msg
+        else
+          formulae << f
+        end
+      end
+
+      perform_preinstall_checks
+
+      formulae.each { |f| install_formula(f) }
     rescue FormulaUnavailableError => e
       ofail e.message
-      require 'cmd/search'
+      query = query_regexp(e.name)
+      puts 'Searching formulae...'
+      puts_columns(search_formulae(query))
       puts 'Searching taps...'
-      puts_columns(search_taps(query_regexp(e.name)))
+      puts_columns(search_taps(query))
     end
   end
 
@@ -57,11 +111,13 @@ module Homebrew extend self
   end
 
   def check_xcode
-    require 'cmd/doctor'
     checks = Checks.new
-    doctor_methods = ['check_xcode_clt', 'check_xcode_license_approved',
-                      'check_for_osx_gcc_installer']
-    doctor_methods.each do |check|
+    %w[
+      check_for_installed_developer_tools
+      check_xcode_license_approved
+      check_for_osx_gcc_installer
+      check_for_bad_install_name_tool
+    ].each do |check|
       out = checks.send(check)
       opoo out unless out.nil?
     end
@@ -88,20 +144,35 @@ module Homebrew extend self
     check_ppc
     check_writable_install_location
     check_xcode
-    check_macports
     check_cellar
   end
 
   def install_formula f
+    f.print_tap_action
+
     fi = FormulaInstaller.new(f)
+    fi.options             = f.build.used_options
+    fi.ignore_deps         = ARGV.ignore_deps?
+    fi.only_deps           = ARGV.only_deps?
+    fi.build_bottle        = ARGV.build_bottle?
+    fi.build_from_source   = ARGV.build_from_source?
+    fi.force_bottle        = ARGV.force_bottle?
+    fi.interactive         = ARGV.interactive?
+    fi.git                 = ARGV.git?
+    fi.verbose             = ARGV.verbose?
+    fi.quieter             = ARGV.quieter?
+    fi.debug               = ARGV.debug?
+    fi.prelude
     fi.install
     fi.caveats
     fi.finish
   rescue FormulaInstallationAlreadyAttemptedError
     # We already attempted to install f as part of the dependency tree of
     # another formula. In that case, don't generate an error, just move on.
-  rescue FormulaAlreadyInstalledError => e
-    opoo e.message
-  # Ignore CannotInstallFormulaError and let caller handle it.
+  rescue CannotInstallFormulaError => e
+    ofail e.message
+  rescue BuildError
+    check_macports
+    raise
   end
 end

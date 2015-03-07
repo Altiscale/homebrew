@@ -2,9 +2,9 @@ require 'formula'
 
 class Basex < Formula
   homepage 'http://basex.org'
-  url 'http://files.basex.org/releases/7.7.2/BaseX772.zip'
-  version '7.7.2'
-  sha1 '95dbb4f500df54ff38a3457c47d8fe512233dd56'
+  url 'http://files.basex.org/releases/8.0.1/BaseX801.zip'
+  version '8.0.1'
+  sha1 '09bfa7243ea6f7e5225746d1359cee2cafab240d'
 
   def install
     rm Dir['bin/*.bat']
@@ -17,9 +17,6 @@ class Basex < Formula
   end
 
   test do
-    require 'open3'
-    Open3.popen3("#{bin}/basex", "1 to 10") do |_, stdout, _|
-      assert_equal "1 2 3 4 5 6 7 8 9 10", stdout.read
-    end
+    assert_equal "1\n2\n3\n4\n5\n6\n7\n8\n9\n10", shell_output("#{bin}/basex '1 to 10'")
   end
 end

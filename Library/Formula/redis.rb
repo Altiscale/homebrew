@@ -1,32 +1,27 @@
-require 'formula'
-
 class Redis < Formula
-  homepage 'http://redis.io/'
-  url 'http://download.redis.io/releases/redis-2.8.1.tar.gz'
-  sha1 '1bb493318ff6c0c87334eb95640b89a16e4357d8'
-
-  head 'https://github.com/antirez/redis.git', :branch => 'unstable'
+  homepage "http://redis.io/"
+  url "http://download.redis.io/releases/redis-2.8.19.tar.gz"
+  sha1 "3e362f4770ac2fdbdce58a5aa951c1967e0facc8"
 
   bottle do
-    sha1 '3d8fe26a70c99d737455c32d50325980c798cfef' => :mavericks
-    sha1 '5fa889cc3d47d8331e79e393769d809c717379bc' => :mountain_lion
-    sha1 '6858973e8c14330c9388ab2635bedc5eddba3cae' => :lion
+    sha1 "ba238ce5e71f5c0c3cb997ebda0cf594f75e8069" => :yosemite
+    sha1 "0902233ed41683e22a1ecd8010f2875c9b0b9dba" => :mavericks
+    sha1 "4b8100b40edd0e6ef695e28bf4fd30360939c3f3" => :mountain_lion
   end
+
+  head "https://github.com/antirez/redis.git", :branch => "unstable"
 
   fails_with :llvm do
     build 2334
-    cause 'Fails with "reference out of range from _linenoise"'
+    cause "Fails with \"reference out of range from _linenoise\""
   end
 
   def install
     # Architecture isn't detected correctly on 32bit Snow Leopard without help
     ENV["OBJARCH"] = "-arch #{MacOS.preferred_arch}"
 
-    # Head and stable have different code layouts
-    src = (buildpath/'src/Makefile').exist? ? buildpath/'src' : buildpath
-    system "make", "-C", src, "CC=#{ENV.cc}"
+    system "make", "install", "PREFIX=#{prefix}", "CC=#{ENV.cc}"
 
-    %w[benchmark cli server check-dump check-aof sentinel].each { |p| bin.install src/"redis-#{p}" }
     %w[run db/redis log].each { |p| (var+p).mkpath }
 
     # Fix up default conf file to match our paths
@@ -36,8 +31,8 @@ class Redis < Formula
       s.gsub! "\# bind 127.0.0.1", "bind 127.0.0.1"
     end
 
-    etc.install 'redis.conf'
-    etc.install 'sentinel.conf' => 'redis-sentinel.conf'
+    etc.install "redis.conf"
+    etc.install "sentinel.conf" => "redis-sentinel.conf"
   end
 
   plist_options :manual => "redis-server #{HOMEBREW_PREFIX}/etc/redis.conf"
@@ -56,7 +51,7 @@ class Redis < Formula
         <string>#{plist_name}</string>
         <key>ProgramArguments</key>
         <array>
-          <string>#{opt_prefix}/bin/redis-server</string>
+          <string>#{opt_bin}/redis-server</string>
           <string>#{etc}/redis.conf</string>
         </array>
         <key>RunAtLoad</key>
@@ -70,5 +65,9 @@ class Redis < Formula
       </dict>
     </plist>
     EOS
+  end
+
+  test do
+    system "#{bin}/redis-server", "--test-memory", "2"
   end
 end

@@ -1,29 +1,39 @@
-require 'formula'
-
 class Aria2 < Formula
-  homepage 'http://aria2.sourceforge.net/'
-  url 'http://downloads.sourceforge.net/project/aria2/stable/aria2-1.18.1/aria2-1.18.1.tar.bz2'
-  sha1 '050f521848353fe90568059768d73a5a6f7ff869'
+  homepage "http://aria2.sourceforge.net/"
+  url "https://downloads.sourceforge.net/project/aria2/stable/aria2-1.18.9/aria2-1.18.9.tar.bz2"
+  sha1 "31ac90d9ffcdba4cdf936ddfbc3d8f08416360e6"
 
-  option 'with-appletls', 'Build with Secure Transport for SSL support'
+  bottle do
+    cellar :any
+    sha1 "a82e7baf0bf64cd3beb6ee2c5d16c10534138852" => :yosemite
+    sha1 "f0ab29fdeebb96b6f9594a7119b9210b820b28f4" => :mavericks
+    sha1 "b931e5c286c97a5cc5d5ef2e21336dfc9fe62ea6" => :mountain_lion
+  end
 
-  depends_on 'pkg-config' => :build
-  depends_on 'gnutls' unless build.with? 'appletls'
-  depends_on 'curl-ca-bundle' => :recommended
-  depends_on :macos => :lion # Needs a c++11 compiler
+  depends_on "pkg-config" => :build
+
+  needs :cxx11
 
   def install
-    args = %W[--disable-dependency-tracking --prefix=#{prefix}]
-    args << "--with-ca-bundle=#{HOMEBREW_PREFIX}/share/ca-bundle.crt" if build.with? 'curl-ca-bundle'
-    if build.with? 'appletls'
-      args << "--with-appletls"
-    else
-      args << "--without-appletls"
-    end
+    args = %W[
+      --disable-dependency-tracking
+      --prefix=#{prefix}
+      --with-appletls
+      --without-openssl
+      --without-gnutls
+      --without-libgmp
+      --without-libnettle
+      --without-libgcrypt
+    ]
 
     system "./configure", *args
-    system "make install"
+    system "make", "install"
 
     bash_completion.install "doc/bash_completion/aria2c"
+  end
+
+  test do
+    system "#{bin}/aria2c", "http://brew.sh"
+    assert File.exist? "index.html"
   end
 end

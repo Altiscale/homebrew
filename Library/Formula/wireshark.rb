@@ -1,71 +1,99 @@
-require 'formula'
-
 class Wireshark < Formula
-  homepage 'http://www.wireshark.org'
-  url 'http://wiresharkdownloads.riverbed.com/wireshark/src/wireshark-1.10.3.tar.bz2'
-  mirror 'http://www.wireshark.org/download/src/wireshark-1.10.3.tar.bz2'
-  sha1 '58b02d6c2f1ae086a6ec46289d1eea0cc4343309'
+  homepage "https://www.wireshark.org"
+
+  stable do
+    url "https://www.wireshark.org/download/src/all-versions/wireshark-1.12.3.tar.bz2"
+    mirror "https://1.eu.dl.wireshark.org/src/wireshark-1.12.3.tar.bz2"
+    sha1 "44ad77b6e80f41ba34ac0eaf477b81cb1345ceed"
+
+    # Removes SDK checks that prevent the build from working on CLT-only systems
+    # Reported upstream: https://bugs.wireshark.org/bugzilla/show_bug.cgi?id=9290
+    patch :DATA
+
+    depends_on "homebrew/dupes/libpcap" => :optional
+  end
+
+  bottle do
+    sha1 "87475adfabb351a0a67d9b934e24ec6b6a06a5f2" => :yosemite
+    sha1 "620d42463ee375d5e9d612677db0d418b07b0b02" => :mavericks
+    sha1 "348f070d0e4f922c82a915b9bbde25ae444d57f5" => :mountain_lion
+  end
 
   head do
-    url 'http://anonsvn.wireshark.org/wireshark/trunk/', :using => :svn
+    url "https://code.wireshark.org/review/wireshark", :using => :git
 
-    depends_on :autoconf
-    depends_on :automake
-    depends_on :libtool
+    depends_on "autoconf" => :build
+    depends_on "automake" => :build
+    depends_on "libtool" => :build
   end
 
   devel do
-    url 'http://wiresharkdownloads.riverbed.com/wireshark/src/wireshark-1.11.2.tar.bz2'
-    sha1 'af2b03338819b300f621048398b49403675db49c'
+    url "https://www.wireshark.org/download/src/all-versions/wireshark-1.99.2.tar.bz2"
+    mirror "https://1.eu.dl.wireshark.org/src/wireshark-1.99.2.tar.bz2"
+    sha1 "8baea1300cca0fe4e5c552113e3521dc8fccdb48"
+
+    depends_on "homebrew/dupes/libpcap" if MacOS.version == :mavericks
   end
 
-  option 'with-x', 'Include X11 support'
-  option 'with-qt', 'Use QT for GUI instead of GTK+'
+  option "with-gtk+3", "Build the wireshark command with gtk+3"
+  option "with-gtk+", "Build the wireshark command with gtk+"
+  option "with-qt", "Build the wireshark-qt command (can be used with or without either GTK option)"
+  option "with-qt5", "Build the wireshark-qt command with qt5 (can be used with or without either GTK option)"
+  option "with-headers", "Install Wireshark library headers for plug-in development"
 
-  depends_on 'pkg-config' => :build
+  depends_on "pkg-config" => :build
 
-  depends_on 'glib'
-  depends_on 'gnutls'
-  depends_on 'libgcrypt'
+  depends_on "glib"
+  depends_on "gnutls"
+  depends_on "libgcrypt"
+  depends_on "d-bus"
 
-  depends_on 'geoip' => :recommended
+  depends_on "geoip" => :recommended
+  depends_on "c-ares" => :recommended
 
-  depends_on 'c-ares' => :optional
-  depends_on 'lua' => :optional
-  depends_on 'pcre' => :optional
-  depends_on 'portaudio' => :optional
-  depends_on 'qt' => :optional
-
-  if build.with? 'x'
-    depends_on :x11
-    depends_on 'gtk+'
-  end
-
-  def patches
-    {
-      # Removes SDK checks that prevent the build from working on CLT-only systems
-      # Reported upstream: https://bugs.wireshark.org/bugzilla/show_bug.cgi?id=9290
-      :p1 => DATA
-    }
-  end if build.stable?
+  depends_on "libsmi" => :optional
+  depends_on "lua" => :optional
+  depends_on "portaudio" => :optional
+  depends_on "qt5" => :optional
+  depends_on "qt" => :optional
+  depends_on "gtk+3" => :optional
+  depends_on "gtk+" => :optional
+  depends_on "gnome-icon-theme" if build.with? "gtk+3"
 
   def install
-    system "./autogen.sh" if build.head?
-
     args = ["--disable-dependency-tracking",
+            "--disable-silent-rules",
             "--prefix=#{prefix}",
-            "--with-gnutls",
-            "--with-ssl"]
+            "--with-gnutls"]
 
-    args << "--disable-warnings-as-errors" if build.head?
-    args << "--disable-wireshark" unless build.with? "x" or build.with? "qt"
-    args << "--disable-gtktest" unless build.with? "x"
-    args << "--with-qt" if build.with? "qt"
+    args << "--disable-wireshark" if build.without?("gtk+3") && build.without?("qt") && build.without?("gtk+") && build.without?("qt5")
+    args << "--disable-gtktest" if build.without?("gtk+3") && build.without?("gtk+")
+    args << "--with-qt" if build.with? "qt" or build.with? "qt5"
+    args << "--with-gtk3" if build.with? "gtk+3"
+    args << "--with-gtk2" if build.with? "gtk+"
+    args << "--with-libcap=#{Formula["libpcap"].opt_prefix}" if build.with? "libpcap"
+
+    if build.head?
+      args << "--disable-warnings-as-errors"
+      system "./autogen.sh"
+    end
 
     system "./configure", *args
     system "make"
     ENV.deparallelize # parallel install fails
-    system "make install"
+    system "make", "install"
+
+    if build.with? "headers"
+      (include/"wireshark").install Dir["*.h"]
+      (include/"wireshark/epan").install Dir["epan/*.h"]
+      (include/"wireshark/epan/crypt").install Dir["epan/crypt/*.h"]
+      (include/"wireshark/epan/dfilter").install Dir["epan/dfilter/*.h"]
+      (include/"wireshark/epan/dissectors").install Dir["epan/dissectors/*.h"]
+      (include/"wireshark/epan/ftypes").install Dir["epan/ftypes/*.h"]
+      (include/"wireshark/epan/wmem").install Dir["epan/wmem/*.h"]
+      (include/"wireshark/wiretap").install Dir["wiretap/*.h"]
+      (include/"wireshark/wsutil").install Dir["wsutil/*.h"]
+    end
   end
 
   def caveats; <<-EOS.undent
@@ -84,6 +112,12 @@ class Wireshark < Formula
     See bug report:
       https://bugs.wireshark.org/bugzilla/show_bug.cgi?id=3760
     EOS
+  end
+
+  test do
+    system "#{bin}/randpkt", "-b", "100", "-c", "2", "capture.pcap"
+    output = shell_output("#{bin}/capinfos -Tmc capture.pcap")
+    assert_equal "File name,Number of packets\ncapture.pcap,2\n", output
   end
 end
 
@@ -106,7 +140,7 @@ index cd41b63..c473fe7 100755
  $as_echo "yes" >&6; }
  		;;
  	esac
- 
+
  	#
 -	# Add a -mmacosx-version-min flag to force tests that
 -	# use the compiler, as well as the build itself, not to,

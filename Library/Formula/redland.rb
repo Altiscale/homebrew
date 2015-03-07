@@ -2,8 +2,16 @@ require 'formula'
 
 class Redland < Formula
   homepage 'http://librdf.org/'
-  url 'http://download.librdf.org/source/redland-1.0.16.tar.gz'
-  sha1 '0dc3d65bee6d580cae84ed261720b5b4e6b1f856'
+  url 'http://download.librdf.org/source/redland-1.0.17.tar.gz'
+  sha1 'a47a7e98f934d17d60a241db90be407a0abe3c5d'
+
+  bottle do
+    sha1 "5f4840ede53c1f9ab9c7387355fc682be3a524b7" => :yosemite
+    sha1 "db4d3fdde92412bafe55e19def76b3447168595c" => :mavericks
+    sha1 "523752a1bd434159e361f66a7a72b45412d30a7a" => :mountain_lion
+  end
+
+  revision 1
 
   option 'with-php', 'Build with php support'
   option 'with-ruby', 'Build with ruby support'
@@ -11,13 +19,14 @@ class Redland < Formula
   depends_on 'pkg-config' => :build
   depends_on 'raptor'
   depends_on 'rasqal'
+  depends_on 'unixodbc'
   depends_on 'sqlite' => :recommended
   depends_on 'berkeley-db' => :optional
   depends_on :python => :optional
 
   resource 'bindings' do
-    url 'http://download.librdf.org/source/redland-bindings-1.0.16.1.tar.gz'
-    sha1 '98c20b64cf5e99cbf29fcb84490e73e2a828213a'
+    url 'http://download.librdf.org/source/redland-bindings-1.0.17.1.tar.gz'
+    sha1 '0a6cd971a3721bc6f7bde4689de04ae35a5c3578'
   end
 
   fails_with :llvm do
@@ -39,7 +48,7 @@ class Redland < Formula
     end
 
     if build.with? 'berkeley-db'
-      args << "--with-bdb=#{Formula.factory('berkeley-db').opt_prefix}"
+      args << "--with-bdb=#{Formula["berkeley-db"].opt_prefix}"
     else
       args << "--with-bdb=no"
     end
@@ -72,11 +81,11 @@ class Redland < Formula
         end
 
         if build.with? 'python'
-          ENV['PYTHON_LIB'] = python.site_packages
+          ENV['PYTHON_LIB'] = lib/'python2.7/site-packages'
           args << "--with-python"
         end
 
-        ENV.append 'PKG_CONFIG_LIBDIR', "#{lib}/pkgconfig", ':'
+        ENV.append_path "PKG_CONFIG_PATH", "#{lib}/pkgconfig"
 
         system "./configure", *args
 
@@ -110,8 +119,6 @@ class Redland < Formula
           #{HOMEBREW_PREFIX}/lib/ruby/site_ruby
       EOS
     end
-
-    s += python.standard_caveats if python
 
     return s.empty? ? nil : s
   end

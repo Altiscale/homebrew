@@ -2,13 +2,19 @@ require 'formula'
 
 class Strongswan < Formula
   homepage 'http://www.strongswan.org'
-  url 'http://download.strongswan.org/strongswan-5.1.1.tar.bz2'
-  sha1 'eba9c90e3e910edd18ef4f1e380e59751965258b'
+  url 'http://download.strongswan.org/strongswan-5.2.2.tar.bz2'
+  sha1 '5dcf6e8e50e11e4009375fda5ce2b49049123e18'
+
+  bottle do
+    sha1 "bcceab4dccbbaef7815b0e4b0c5fd800c9323edd" => :yosemite
+    sha1 "7ecdc03048bdb90143588c229a3d5422af2feae2" => :mavericks
+    sha1 "8c1bb11c6d21f5d4c80a43fbffdf5ac432eaaa3f" => :mountain_lion
+  end
 
   option 'with-curl', 'Build with libcurl based fetcher'
   option 'with-suite-b', 'Build with Suite B support (does not use the IPsec implementation provided by the kernel)'
 
-  depends_on 'openssl' if build.include? 'with-suite-b' or MacOS.version <= :leopard
+  depends_on 'openssl'
   depends_on 'curl' => :optional
 
   def install
@@ -35,18 +41,20 @@ class Strongswan < Formula
       --enable-pgp
       --enable-pkcs1
       --enable-pkcs8
+      --enable-pki
       --enable-pubkey
       --enable-revocation
+      --enable-scepclient
       --enable-socket-default
       --enable-sshkey
       --enable-stroke
-      --enable-tools
+      --enable-swanctl
       --enable-updown
       --enable-unity
       --enable-xauth-generic
     ]
     args << "--enable-curl" if build.with? 'curl'
-    args << "--enable-kernel-pfkey" unless build.with? 'suite-b'
+    args << "--enable-kernel-pfkey" if build.without? 'suite-b'
     args << "--enable-kernel-libipsec" if build.with? 'suite-b'
 
     system "./configure", *args

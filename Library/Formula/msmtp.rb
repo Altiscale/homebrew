@@ -1,27 +1,27 @@
-require 'formula'
-
 class Msmtp < Formula
-  homepage 'http://msmtp.sourceforge.net'
-  url 'http://downloads.sourceforge.net/project/msmtp/msmtp/1.4.31/msmtp-1.4.31.tar.bz2'
-  sha1 'c0edce1e1951968853f15209c8509699ff9e9ab5'
+  homepage "http://msmtp.sourceforge.net"
+  url "https://downloads.sourceforge.net/project/msmtp/msmtp/1.6.1/msmtp-1.6.1.tar.xz"
+  sha1 "ac70151bcb53af5e192cbb147fd2b8139c637089"
 
-  depends_on 'pkg-config' => :build
-  depends_on 'curl-ca-bundle' => :optional
+  bottle do
+    sha1 "fdc446edaff06269af325e4b95c10788d187b79e" => :yosemite
+    sha1 "cdb0533ee36dbcb9fe249adbc74f0394a605fa78" => :mavericks
+    sha1 "dc7336d5b49a22dc7b014529d08c6c98b7ad0c9f" => :mountain_lion
+  end
 
-  # msmtp enables OS X Keychain support by default, so no need to ask for it.
+  depends_on "pkg-config" => :build
+  depends_on "openssl"
 
   def install
-    # Msmtp will build against gnutls by default if it exists on the
-    # system.  This sets up problems if the user later removes gnutls.
-    # So explicitly ask for openssl, and ye shall receive it whether
-    # or not gnutls is present.
     args = %W[
       --disable-dependency-tracking
+      --with-macosx-keyring
       --prefix=#{prefix}
-      --with-ssl=openssl
+      --with-tls=openssl
     ]
 
     system "./configure", *args
     system "make", "install"
+    (share/"msmtp/scripts").install "scripts/msmtpq"
   end
 end

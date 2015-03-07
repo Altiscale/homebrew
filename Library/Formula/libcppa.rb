@@ -1,41 +1,50 @@
-require 'formula'
-
 class Libcppa < Formula
-  homepage 'http://libcppa.blogspot.it'
-  url 'https://github.com/Neverlord/libcppa/archive/V0.7.1.tar.gz'
-  sha1 '0f1f685e94bfa16625370b978ff26deaf799b94e'
+  # TODO: since libcppa has been renamed to CAF, this formula should eventually
+  # be renamed to 'caf.rb'.
+  homepage "http://actor-framework.org/"
+  url "https://github.com/actor-framework/actor-framework/archive/0.12.2.tar.gz"
+  sha1 "003655f524a727fa8ccb5b41b6d997b299f5b496"
+  head "https://github.com/actor-framework/actor-framework.git"
 
-  depends_on :macos => :lion
-  depends_on 'cmake' => :build
-
-  option 'with-opencl', 'Build with OpenCL actors'
-
-  def caveats
-      "Libcppa requires a C++11 compliant compiler"
+  bottle do
+    cellar :any
+    sha1 "d147228e33f56e7d8d583d049c7983e6dea4c418" => :yosemite
+    sha1 "2b2916dc07ca27f5b98d8d78d363c04fee860abf" => :mavericks
+    sha1 "88e3a062a1ed03d4b8297daf3670f8f834ee60dd" => :mountain_lion
   end
 
-  fails_with :gcc do
-    cause 'libcppa requires a C++11 compliant compiler.'
-  end
+  depends_on "cmake" => :build
 
-  fails_with :llvm do
-    cause 'libcppa requires a C++11 compliant compiler.'
-  end
+  needs :cxx11
+
+  option "with-opencl", "build with support for OpenCL actors"
+  option "without-check", "skip unit tests (not recommended)"
 
   def install
-    args = %W[
-      --prefix=#{prefix}
-      --build-static
-      --disable-context-switching
-    ]
+    args = %W[./configure --prefix=#{prefix} --no-examples --build-static]
+    args << "--no-opencl" if build.without? "opencl"
 
-    if build.with? 'opencl'
-      args << "--with-opencl"
-    end
-
-    system "./configure", *args
+    system *args
     system "make"
-    system "make", "test"
+    system "make", "test" if build.with? "check"
     system "make", "install"
+  end
+
+  test do
+    (testpath/"test.cpp").write <<-EOS.undent
+      #include <iostream>
+      #include <caf/all.hpp>
+      using namespace caf;
+      int main() {
+        scoped_actor self;
+        self->spawn([] {
+          std::cout << "test" << std::endl;
+        });
+        self->await_all_other_actors_done();
+        return 0;
+      }
+    EOS
+    system *%W[#{ENV.cxx} -std=c++11 -stdlib=libc++ test.cpp -lcaf_core -o test]
+    system "./test"
   end
 end

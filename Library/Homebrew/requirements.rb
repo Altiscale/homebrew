@@ -1,20 +1,37 @@
 require 'requirement'
+require 'requirements/apr_dependency'
 require 'requirements/fortran_dependency'
 require 'requirements/language_module_dependency'
 require 'requirements/minimum_macos_requirement'
+require 'requirements/maximum_macos_requirement'
 require 'requirements/mpi_dependency'
+require 'requirements/osxfuse_dependency'
 require 'requirements/python_dependency'
+require 'requirements/java_dependency'
+require 'requirements/tuntap_dependency'
+require 'requirements/unsigned_kext_requirement'
 require 'requirements/x11_dependency'
 
 class XcodeDependency < Requirement
   fatal true
-  build true
 
-  satisfy(:build_env => false) { MacOS::Xcode.installed? }
+  satisfy(:build_env => false) { xcode_installed_version }
+
+  def initialize(tags)
+    @version = tags.find { |t| tags.delete(t) if /(\d\.)+\d/ === t }
+    super
+  end
+
+  def xcode_installed_version
+    return false unless MacOS::Xcode.installed?
+    return true unless @version
+    MacOS::Xcode.version >= @version
+  end
 
   def message
+    version = " #{@version}" if @version
     message = <<-EOS.undent
-      A full installation of Xcode.app is required to compile this software.
+      A full installation of Xcode.app#{version} is required to compile this software.
       Installing just the Command Line Tools is not sufficient.
     EOS
     if MacOS.version >= :lion
@@ -26,6 +43,10 @@ class XcodeDependency < Requirement
         Xcode can be installed from https://developer.apple.com/downloads/
       EOS
     end
+  end
+
+  def inspect
+    "#<#{self.class.name}: #{name.inspect} #{tags.inspect} version=#{@version.inspect}>"
   end
 end
 
@@ -43,46 +64,29 @@ class PostgresqlDependency < Requirement
   satisfy { which 'pg_config' }
 end
 
+class GPGDependency < Requirement
+  fatal true
+  default_formula "gpg"
+
+  satisfy { which("gpg") || which("gpg2") }
+end
+
 class TeXDependency < Requirement
   fatal true
+  cask "mactex"
+  download "https://www.tug.org/mactex/"
 
   satisfy { which('tex') || which('latex') }
 
-  def message; <<-EOS.undent
-    A LaTeX distribution is required to install.
-
-    You can install MacTeX distribution from:
-      http://www.tug.org/mactex/
-
-    Make sure that its bin directory is in your PATH before proceeding.
-
-    You may also need to restore the ownership of Homebrew install:
-      sudo chown -R $USER `brew --prefix`
-    EOS
-  end
-end
-
-class CLTDependency < Requirement
-  fatal true
-  build true
-
-  satisfy(:build_env => false) { MacOS::CLT.installed? }
-
   def message
-    message = <<-EOS.undent
-      The Command Line Tools are required to compile this software.
+    s = <<-EOS.undent
+      A LaTeX distribution is required for Homebrew to install this formula.
+
+      Make sure that "/usr/texbin", or the location you installed it to, is in
+      your PATH before proceeding.
     EOS
-    if MacOS.version >= :mavericks
-      message += <<-EOS.undent
-        Run `xcode-select --install` to install them.
-      EOS
-    else
-      message += <<-EOS.undent
-        The standalone package can be obtained from
-        https://developer.apple.com/downloads/,
-        or it can be installed via Xcode's preferences.
-      EOS
-    end
+    s += super
+    s
   end
 end
 
@@ -116,5 +120,6 @@ end
 class GitDependency < Requirement
   fatal true
   default_formula 'git'
-  satisfy { which('git') }
+  satisfy { !!which('git') }
 end
+

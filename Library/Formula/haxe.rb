@@ -1,21 +1,40 @@
-require 'formula'
+require "formula"
 
 class Haxe < Formula
-  homepage 'http://haxe.org'
-  url 'https://github.com/HaxeFoundation/haxe.git', :tag => 'v3.0.1'
+  homepage "http://haxe.org"
 
-  head 'https://github.com/HaxeFoundation/haxe.git', :branch => 'development'
+  stable do
+    url "https://github.com/HaxeFoundation/haxe.git", :tag => "3.1.3"
+    # Remove the below with the next stable release
+    depends_on MaximumMacOSRequirement => :mavericks
+  end
 
-  depends_on 'neko'
-  depends_on 'objective-caml'
+  bottle do
+    cellar :any
+    sha1 "83fe01c0ca2997328e88ef7763181ff40cc5082a" => :mavericks
+    sha1 "46c5911f3505c7e102c71dde16ed4ab2bdcc4cbc" => :mountain_lion
+    sha1 "408dbaf0110cb38ee52900bd4910c56913681bab" => :lion
+  end
+
+  head do
+    url "https://github.com/HaxeFoundation/haxe.git", :branch => "development"
+  end
+
+  depends_on "objective-caml" => :build
+  depends_on "camlp4" => :build
+  depends_on "neko" => :optional
 
   def install
     # Build requires targets to be built in specific order
     ENV.deparallelize
-    system 'make'
-    bin.install 'haxe'
-    bin.install 'std/tools/haxelib/haxelib.sh' => 'haxelib'
-    (lib/'haxe').install 'std'
+    system "make"
+    bin.mkpath
+    system "make", "install", "INSTALL_BIN_DIR=#{bin}", "INSTALL_LIB_DIR=#{lib}/haxe"
+
+    # Replace the absolute symlink by a relative one,
+    # such that binary package created by homebrew will work in non-/usr/local locations.
+    rm bin/"haxe"
+    bin.install_symlink lib/"haxe/haxe"
   end
 
   test do

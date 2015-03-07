@@ -1,33 +1,33 @@
-require 'formula'
-
 class Libmagic < Formula
-  homepage 'http://www.darwinsys.com/file/'
-  url 'ftp://ftp.astron.com/pub/file/file-5.15.tar.gz'
-  mirror 'http://fossies.org/unix/misc/file-5.15.tar.gz'
-  sha1 'de1a060aa5fe61c1a6f0359fb526e824b4244323'
+  homepage "http://www.darwinsys.com/file/"
+  url "ftp://ftp.astron.com/pub/file/file-5.22.tar.gz"
+  mirror "https://fossies.org/unix/misc/file-5.22.tar.gz"
+  sha1 "20fa06592291555f2b478ea2fb70b53e9e8d1f7c"
+
+  bottle do
+    sha1 "2a725b5f45d5c534ac59cfee87fde8b09e7f764f" => :yosemite
+    sha1 "2e493cfb219635780b4cf01a05c23dc60a6806cb" => :mavericks
+    sha1 "f626fc50838bc8d3be6e57a79e6f977b2d7c64c2" => :mountain_lion
+  end
 
   option :universal
 
   depends_on :python => :optional
 
-  # Fixed upstream, should be in next release
-  # See http://bugs.gw.com/view.php?id=230
-  def patches
-    p = []
-    p << DATA if MacOS.version < :lion
-  end
-
   def install
     ENV.universal_binary if build.universal?
+
+    # Clean up "src/magic.h" as per http://bugs.gw.com/view.php?id=330
+    rm "src/magic.h"
 
     system "./configure", "--disable-dependency-tracking",
                           "--prefix=#{prefix}",
                           "--enable-fsect-man5"
-    system "make install"
+    system "make", "install"
 
-    python do
+    if build.with? "python"
       cd "python" do
-        system python, "setup.py", "install", "--prefix=#{prefix}"
+        system "python", *Language::Python.setup_install_args(prefix)
       end
     end
 
@@ -35,25 +35,4 @@ class Libmagic < Formula
     rm bin/"file"
     rm man1/"file.1"
   end
-
-  test do
-    if build.with? 'python'
-      system 'python', '-c', "import magic; magic._init()"
-    end
-  end
 end
-
-__END__
-diff --git a/src/getline.c b/src/getline.c
-index e3c41c4..74c314e 100644
---- a/src/getline.c
-+++ b/src/getline.c
-@@ -76,7 +76,7 @@ getdelim(char **buf, size_t *bufsiz, int delimiter, FILE *fp)
-  }
- }
- 
--ssize_t
-+public ssize_t
- getline(char **buf, size_t *bufsiz, FILE *fp)
- {
-  return getdelim(buf, bufsiz, '\n', fp);
