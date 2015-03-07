@@ -10,13 +10,13 @@ class Ekg2 < Formula
   depends_on 'libgadu' => :optional
 
   def install
-    readline = Formula['readline'].opt_prefix
+    readline = Formula.factory 'readline'
 
     args = ["--disable-debug", "--disable-dependency-tracking",
             "--prefix=#{prefix}",
             "--without-python",
             "--without-perl",
-            "--with-readline=#{readline}",
+            "--with-readline=#{readline.prefix}",
             "--without-gtk",
             "--enable-unicode"]
 

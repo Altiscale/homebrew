@@ -1,44 +1,37 @@
 require 'formula'
 
+# https version doesn't download with system curl on Snow Leopard
+# https://github.com/mxcl/homebrew/issues/20339
 class Cfengine < Formula
   homepage 'http://cfengine.com/'
-  url 'http://s3.amazonaws.com/cfengine.package-repos/tarballs/cfengine-3.6.3.tar.gz'
-  sha1 '90b5577bbeb6215e0ffbc19bf0fe6c2e01bda596'
-
-  bottle do
-    cellar :any
-    sha1 "143856c4d884af447e8c5b395ff5232745007a18" => :yosemite
-    sha1 "784285e682e6b170bef1d36d8c60112a4b90bad5" => :mavericks
-    sha1 "d38f9436790f4754cadc63bc0870b48c85901ea2" => :mountain_lion
-  end
-
-  resource "masterfiles" do
-    url "http://s3.amazonaws.com/cfengine.package-repos/tarballs/masterfiles-3.6.3.tar.gz"
-    sha1 "23496c323ee9d8204d78a2047ef7a90c61d12b18"
-  end
+  url 'http://cfengine.com/source-code/download?file=cfengine-3.5.2.tar.gz'
+  sha1 '57ffeee2a2a6acb1764a8a0d7979538d683ccf5a'
 
   depends_on 'pcre'
-  depends_on 'lmdb'
-  depends_on 'autoconf' => :build
-  depends_on 'automake' => :build
-  depends_on 'libtool' => :build
+  depends_on 'tokyo-cabinet'
   depends_on 'libxml2' if MacOS.version < :mountain_lion
-  depends_on "openssl"
+
+  def patches
+    # Upstream patches for OS X compilation
+    %w{
+      https://github.com/cfengine/core/commit/f748a005b39a7aafd554e41a528b2216e28dce92.patch
+      https://github.com/cfengine/core/commit/d03fcc2d38a4db0c79386aaef30597102bf45853.patch
+      https://github.com/cfengine/core/commit/228f27002018a82b339ddfe6a5510a24128ce0ab.patch
+    }
+  end
 
   def install
-    system "autoreconf", "-Wno-portability", "-fvi", "-I", "m4" # see autogen.sh
     system "./configure", "--disable-dependency-tracking",
                           "--prefix=#{prefix}",
                           "--with-workdir=#{var}/cfengine",
-                          "--with-lmdb=#{Formula['lmdb'].opt_prefix}",
-                          "--with-pcre=#{Formula['pcre'].opt_prefix}",
+                          "--with-tokyocabinet",
+                          "--with-pcre=#{Formula.factory('pcre').opt_prefix}",
                           "--without-mysql",
                           "--without-postgresql"
     system "make install"
-    (share/"cfengine/CoreBase").install resource("masterfiles")
   end
 
-  test do
+  def test
     system "#{bin}/cf-agent", "-V"
   end
 end

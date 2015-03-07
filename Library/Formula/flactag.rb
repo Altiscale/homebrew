@@ -2,7 +2,7 @@ require 'formula'
 
 class Flactag < Formula
   homepage 'http://flactag.sourceforge.net/'
-  url 'https://downloads.sourceforge.net/project/flactag/v2.0.4/flactag-2.0.4.tar.gz'
+  url 'http://downloads.sourceforge.net/project/flactag/v2.0.4/flactag-2.0.4.tar.gz'
   sha1 'eb62b3b8657fe26c6f838b0098fd4f176ccb454d'
 
   depends_on 'pkg-config' => :build
@@ -13,15 +13,15 @@ class Flactag < Formula
   depends_on 'libdiscid'
   depends_on 's-lang'
   depends_on 'unac'
-  depends_on 'jpeg'
 
-  # Don't have a2x run xmllint on the a2x-generated DocBook - it
-  # fails its own validation.
-  patch :DATA
+  def patches
+    # Don't have a2x run xmllint on the a2x-generated DocBook - it
+    # fails its own validation.
+    DATA
+  end
 
   def install
-    ENV.append "LDFLAGS", "-liconv"
-    ENV.append "LDFLAGS", "-lFLAC"
+    ENV.append 'LDFLAGS', '-liconv'
     system "./configure", "--disable-dependency-tracking",
                           "--prefix=#{prefix}"
     system "make install"

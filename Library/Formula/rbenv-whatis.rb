@@ -1,15 +1,13 @@
-class RbenvWhatis < Formula
-  homepage "https://github.com/rkh/rbenv-whatis"
-  url "https://github.com/rkh/rbenv-whatis/archive/v1.0.0.tar.gz"
-  sha1 "8c802d8e2bba66d0c87c62c9d0b887beb52b1de4"
+require 'formula'
 
-  depends_on "rbenv"
+class RbenvWhatis < Formula
+  homepage 'https://github.com/rkh/rbenv-whatis'
+  url 'https://github.com/rkh/rbenv-whatis/archive/9bf9f2.tar.gz'
+  sha1 'a78eb1ce44974d7080087f96d8b17f1334b9e03c'
+
+  depends_on 'rbenv'
 
   def install
-    prefix.install Dir["*"]
-  end
-
-  test do
-    system "rbenv", "whatis", "2.0"
+    prefix.install Dir['*']
   end
 end

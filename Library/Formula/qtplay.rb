@@ -12,7 +12,7 @@ class Qtplay < Formula
     man1.install 'qtplay.1'
   end
 
-  test do
+  def test
     system "#{bin}/qtplay", "--help"
   end
 end

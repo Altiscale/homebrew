@@ -1,66 +1,53 @@
-class DnscryptProxy < Formula
-  homepage "http://dnscrypt.org"
-  url "https://github.com/jedisct1/dnscrypt-proxy/releases/download/1.4.3/dnscrypt-proxy-1.4.3.tar.gz"
-  mirror "http://download.dnscrypt.org/dnscrypt-proxy/dnscrypt-proxy-1.4.3.tar.gz"
-  sha256 "f10f10c18e25ced3c5ec5d0c4145d33270f9cfa991fd1b18d5d9af00e4d9b68e"
+require 'formula'
 
-  bottle do
-    sha1 "33cb7a65e5ddd861e679a65dcfe9530e3c531b43" => :yosemite
-    sha1 "579e4e3835a617db90740e6bc70834561e2f240b" => :mavericks
-    sha1 "2896d20fc0671986aff1e774fdd419f9e5562b8f" => :mountain_lion
-  end
+class DnscryptProxy < Formula
+  homepage 'http://dnscrypt.org'
+  url 'http://download.dnscrypt.org/dnscrypt-proxy/dnscrypt-proxy-1.3.3.tar.bz2'
+  sha256 'd9aca5253b9fe0fd0bb756201e837d3b723c091e5be0eb3a81cf5432cedaec47'
 
   head do
-    url "https://github.com/jedisct1/dnscrypt-proxy.git"
+    url 'https://github.com/opendns/dnscrypt-proxy.git', :branch => 'master'
 
-    depends_on "autoconf" => :build
-    depends_on "automake" => :build
-    depends_on "libtool" => :build
+    depends_on :autoconf
+    depends_on :automake
+    depends_on :libtool
   end
 
-  option "with-plugins", "Support plugins and install example plugins."
-  deprecated_option "plugins" => "with-plugins"
+  option "plugins", "Support plugins and install example plugins."
 
-  depends_on "libsodium"
+  depends_on 'libsodium'
 
   def install
     system "autoreconf", "-if" if build.head?
 
     args = ["--disable-dependency-tracking", "--prefix=#{prefix}"]
-    if build.with? "plugins"
+    if build.include? "plugins"
       args << "--enable-plugins"
       args << "--enable-relaxed-plugins-permissions"
       args << "--enable-plugins-root"
     end
     system "./configure", *args
-    system "make", "install"
+    system "make install"
   end
 
   def caveats; <<-EOS.undent
-    After starting dnscrypt-proxy, you will need to point your
-    local DNS server to 127.0.0.1. You can do this by going to
-    System Preferences > "Network" and clicking the "Advanced..."
-    button for your interface. You will see a "DNS" tab where you
-    can click "+" and enter 127.0.0.1 in the "DNS Servers" section.
+    Once dnscrypt-proxy is running, you will have to update your local
+    DNS server to point to 127.0.0.1 in order for it to actually work.
+    This is generally done under System Preferences > Network > Advanced.
+    Once there, you will see a "DNS" tab where you can enter a list of DNS
+    servers. You will want to make sure that 127.0.0.1 is listed there first.
 
-    By default, dnscrypt-proxy runs on localhost (127.0.0.1), port 53,
-    and under the "nobody" user using the default OpenDNS DNSCrypt-enabled
-    resolver. If you would like to change these settings (e.g., switching to
-    a DNSCrypt-enabled resolver with DNSSEC support), you will have to edit the
-    plist file (e.g., --resolver-address, --provider-name, --provider-key, etc.)
+    Note: By default, dnscrypt-proxy runs on 127.0.0.1:53 under the "nobody" user.
+    If you would like to change these settings, you will have to edit the plist file.
 
-    To check that dnscrypt-proxy is working correctly, open Terminal and enter the
-    following command:
+    To check that dnscrypt-proxy is running properly, open Terminal and enter this at
+    the command prompt:
 
-        dig txt debug.opendns.com
+        nslookup -type=txt debug.opendns.com
 
-    You should see a line in the result that looks like this:
+    You should see something like this in the output:
 
-        debug.opendns.com.	0	IN	TXT	"dnscrypt enabled (......)"
-
-    Note: This will only work if you are using the default OpenDNS DNSCrypt-enabled
-    resolver. If you are using a different resolver, you can use a tool like tcpdump
-    to verify that everything is working correctly.
+        debug.opendns.com text = "dnscrypt enabled (...)"
     EOS
   end
 
@@ -79,9 +66,9 @@ class DnscryptProxy < Formula
         <true/>
         <key>ProgramArguments</key>
         <array>
-          <string>#{opt_sbin}/dnscrypt-proxy</string>
+          <string>#{opt_prefix}/sbin/dnscrypt-proxy</string>
+          <string>--local-address=127.0.0.1:53</string>
           <string>--user=nobody</string>
-          <string>--resolver-name=opendns</string>
         </array>
         <key>UserName</key>
         <string>root</string>
@@ -92,9 +79,5 @@ class DnscryptProxy < Formula
       </dict>
     </plist>
     EOS
-  end
-
-  test do
-    system "#{sbin}/dnscrypt-proxy", "--version"
   end
 end

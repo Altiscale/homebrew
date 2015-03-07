@@ -1,28 +1,27 @@
 require 'testing_env'
 require 'dependency_collector'
+require 'extend/set'
 
-class DependencyCollectorTests < Homebrew::TestCase
+module DependencyCollectorTestExtension
   def find_dependency(name)
-    @d.deps.find { |dep| dep.name == name }
+    deps.find { |dep| dep.name == name }
   end
 
   def find_requirement(klass)
-    @d.requirements.find { |req| klass === req }
+    requirements.find { |req| klass === req }
   end
+end
 
+class DependencyCollectorTests < Test::Unit::TestCase
   def setup
-    @d = DependencyCollector.new
-  end
-
-  def teardown
-    DependencyCollector.clear_cache
+    @d = DependencyCollector.new.extend(DependencyCollectorTestExtension)
   end
 
   def test_dependency_creation
     @d.add 'foo' => :build
     @d.add 'bar' => ['--universal', :optional]
-    assert_instance_of Dependency, find_dependency("foo")
-    assert_equal 2, find_dependency("bar").tags.length
+    assert_instance_of Dependency, @d.find_dependency('foo')
+    assert_equal 2, @d.find_dependency('bar').tags.length
   end
 
   def test_add_returns_created_dep
@@ -31,49 +30,85 @@ class DependencyCollectorTests < Homebrew::TestCase
   end
 
   def test_dependency_tags
-    assert_predicate Dependency.new('foo', [:build]), :build?
-    assert_predicate Dependency.new('foo', [:build, :optional]), :optional?
-    assert_includes Dependency.new('foo', ["universal"]).options, "--universal"
+    assert Dependency.new('foo', [:build]).build?
+    assert Dependency.new('foo', [:build, :optional]).optional?
+    assert Dependency.new('foo', [:universal]).options.include? '--universal'
     assert_empty Dependency.new('foo').tags
+  end
+
+  def test_no_duplicate_dependencies
+    @d.add 'foo'
+    @d.add 'foo' => :build
+    assert_equal 1, @d.deps.count
+    assert_empty @d.find_dependency('foo').tags
   end
 
   def test_requirement_creation
     @d.add :x11
-    assert_instance_of X11Dependency, find_requirement(X11Dependency)
+    assert_instance_of X11Dependency, @d.find_requirement(X11Dependency)
   end
 
   def test_no_duplicate_requirements
     2.times { @d.add :x11 }
-    assert_equal 1, @d.requirements.count
+    assert_equal 1, @d.requirements.length
   end
 
   def test_requirement_tags
     @d.add :x11 => '2.5.1'
     @d.add :xcode => :build
-    assert_empty find_requirement(X11Dependency).tags
-    assert_predicate find_requirement(XcodeDependency), :build?
+    assert_empty @d.find_requirement(X11Dependency).tags
+    assert @d.find_requirement(XcodeDependency).build?
   end
 
   def test_x11_no_tag
     @d.add :x11
-    assert_empty find_requirement(X11Dependency).tags
+    assert_empty @d.find_requirement(X11Dependency).tags
   end
 
   def test_x11_min_version
     @d.add :x11 => '2.5.1'
-    assert_equal "2.5.1", find_requirement(X11Dependency).min_version.to_s
+    assert_equal '2.5.1', @d.find_requirement(X11Dependency).min_version
   end
 
   def test_x11_tag
     @d.add :x11 => :optional
-    assert_predicate find_requirement(X11Dependency), :optional?
+    assert @d.find_requirement(X11Dependency).optional?
   end
 
   def test_x11_min_version_and_tag
     @d.add :x11 => ['2.5.1', :optional]
-    dep = find_requirement(X11Dependency)
-    assert_equal '2.5.1', dep.min_version.to_s
-    assert_predicate dep, :optional?
+    dep = @d.find_requirement(X11Dependency)
+    assert_equal '2.5.1', dep.min_version
+    assert dep.optional?
+  end
+
+  def test_libltdl_not_build_dep
+    MacOS::Xcode.stubs(:provides_autotools?).returns(false)
+    dep = @d.build(:libltdl)
+    assert_equal Dependency.new("libtool"), dep
+    assert !dep.build?
+  end
+
+  def test_autotools_dep_no_system_autotools
+    MacOS::Xcode.stubs(:provides_autotools?).returns(false)
+    dep = @d.build(:libtool)
+    assert_equal Dependency.new("libtool"), dep
+    assert dep.build?
+  end
+
+  def test_autotools_dep_system_autotools
+    MacOS::Xcode.stubs(:provides_autotools?).returns(true)
+    assert_nil @d.build(:libtool)
+  end
+
+  def test_x11_proxy_dep_mountain_lion
+    MacOS.stubs(:version).returns(MacOS::Version.new("10.8"))
+    assert_equal Dependency.new("libpng"), @d.build(:libpng)
+  end
+
+  def test_x11_proxy_dep_lion_or_older
+    MacOS.stubs(:version).returns(MacOS::Version.new("10.7"))
+    assert_equal X11Dependency::Proxy.new(:libpng), @d.build(:libpng)
   end
 
   def test_ld64_dep_pre_leopard
@@ -103,25 +138,25 @@ class DependencyCollectorTests < Homebrew::TestCase
 
   def test_resource_dep_git_url
     resource = Resource.new
-    resource.url("git://example.com/foo/bar.git")
+    resource.url("git://github.com/foo/bar.git")
     assert_instance_of GitDependency, @d.add(resource)
   end
 
   def test_resource_dep_gzip_url
     resource = Resource.new
-    resource.url("http://example.com/foo.tar.gz")
+    resource.url("http://foo.com/bar.tar.gz")
     assert_nil @d.add(resource)
   end
 
   def test_resource_dep_xz_url
     resource = Resource.new
-    resource.url("http://example.com/foo.tar.xz")
+    resource.url("http://foo.com/bar.tar.xz")
     assert_equal Dependency.new("xz", [:build]), @d.add(resource)
   end
 
   def test_resource_dep_raises_for_unknown_classes
     resource = Resource.new
-    resource.download_strategy = Class.new
+    resource.url "foo", :using => Class.new
     assert_raises(TypeError) { @d.add(resource) }
   end
 end

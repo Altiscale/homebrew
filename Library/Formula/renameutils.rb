@@ -1,17 +1,12 @@
+require 'formula'
+
 class Renameutils < Formula
-  homepage "http://www.nongnu.org/renameutils/"
-  url "http://download.savannah.gnu.org/releases/renameutils/renameutils-0.12.0.tar.gz"
-  sha1 "8c6edae4ee374330a01a95257fd552b5cb7540bc"
+  homepage 'http://www.nongnu.org/renameutils/'
+  url 'http://download.savannah.gnu.org/releases/renameutils/renameutils-0.12.0.tar.gz'
+  sha1 '8c6edae4ee374330a01a95257fd552b5cb7540bc'
 
-  bottle do
-    cellar :any
-    sha1 "f2ad6649f1636f36308781ca75d80757ddf03d5c" => :yosemite
-    sha1 "7e9d5223ce53c47d32dacbfb841c44b6f4e0361f" => :mavericks
-    sha1 "00fe259bce0743080676d617e9a521d7d4732418" => :mountain_lion
-  end
-
-  depends_on "readline" # Use instead of system libedit
-  depends_on "coreutils"
+  depends_on 'readline' # Use instead of system libedit
+  depends_on 'coreutils'
 
   # Use the GNU versions of certain system utilities. See:
   # https://trac.macports.org/ticket/24525
@@ -19,7 +14,7 @@ class Renameutils < Formula
   # The fourth patch is new and fixes a Makefile syntax error that causes
   # make install to fail.  Reported upstream via email and fixed in HEAD.
   # Remove patch #4 at version > 0.12.0.  The first three should persist.
-  patch :DATA
+  def patches; DATA; end
 
   def install
     system "./configure", "--disable-dependency-tracking",
@@ -27,13 +22,7 @@ class Renameutils < Formula
                           "--with-packager=Homebrew"
     system "make"
     ENV.deparallelize # parallel install fails
-    system "make", "install"
-  end
-
-  test do
-    (testpath/"test.txt").write ("Hello World!")
-    pipe_output("#{bin}/icp test.txt", ".2\n")
-    assert_equal File.read("test.txt"), File.read("test.txt.2")
+    system "make install"
   end
 end
 

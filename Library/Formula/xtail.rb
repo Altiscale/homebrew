@@ -14,7 +14,7 @@ class Xtail < Formula
     system "make install"
   end
 
-  test do
+  def test
     system "#{bin}/xtail"
   end
 end

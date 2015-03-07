@@ -2,10 +2,22 @@ require 'formula'
 
 class Libkml < Formula
   homepage 'http://code.google.com/p/libkml/'
+  url 'http://libkml.googlecode.com/files/libkml-1.2.0.tar.gz'
+  sha1 '3fa5acdc2b2185d7f0316d205002b7162f079894'
 
-  stable do
-    url "https://libkml.googlecode.com/files/libkml-1.2.0.tar.gz"
-    sha1 "3fa5acdc2b2185d7f0316d205002b7162f079894"
+  head do
+    url 'http://libkml.googlecode.com/svn/trunk/'
+
+    depends_on :autoconf
+    depends_on :automake
+    depends_on :libtool
+  end
+
+  def patches
+    p = []
+    # Fix compilation with clang and gcc 4.7+
+    # https://code.google.com/p/libkml/issues/detail?id=179
+    p << DATA
 
     # Correct an issue where internal third-party libs (libminizip and liburiparser)
     # are installed as dylibs. liburiparser conflicts with uriparser formula.
@@ -13,37 +25,13 @@ class Libkml < Formula
     # renamed with prefixes of "libkml_", i.e, can't be linked against for other builds
     # Fix just forces internal libs to be linked statically until the following
     # is addressed upstream: https://code.google.com/p/libkml/issues/detail?id=50
-    patch do
-      url "https://gist.githubusercontent.com/dakcarto/7419882/raw/10ae08af224b3fee0617fa6288d806d3ccf37c0f/libkml-1.2-static-deps"
-      sha1 "eba47421e64e75bcf68026bbbe7c985b3bebcde5"
+    if build.head?
+      p << "https://gist.github.com/dakcarto/7420023/raw/65cdb088c91a7da844251e348eeda8df1d903f1d/libkml-svn-static-deps"
+    else
+      p << "https://gist.github.com/dakcarto/7419882/raw/10ae08af224b3fee0617fa6288d806d3ccf37c0f/libkml-1.2-static-deps"
     end
+    return p
   end
-
-  bottle do
-    cellar :any
-    revision 1
-    sha1 "604dafcf5fb8135e89f4636af4ecb21b404b4e4b" => :yosemite
-    sha1 "61000bffb52eb852149276e37b42461fd5f710a7" => :mavericks
-    sha1 "68d01ed7b9748caa23f6309c62e836cb030f673d" => :mountain_lion
-  end
-
-  head do
-    url 'http://libkml.googlecode.com/svn/trunk/'
-
-    depends_on "autoconf" => :build
-    depends_on "automake" => :build
-    depends_on "libtool" => :build
-
-    # see stable patch
-    patch do
-      url "https://gist.githubusercontent.com/dakcarto/7420023/raw/65cdb088c91a7da844251e348eeda8df1d903f1d/libkml-svn-static-deps"
-      sha1 "9ef82d73199325e63596c28c6965ec8c151bf7c5"
-    end
-  end
-
-  # Fix compilation with clang and gcc 4.7+
-  # https://code.google.com/p/libkml/issues/detail?id=179
-  patch :DATA
 
   def install
     if build.head?
@@ -52,6 +40,9 @@ class Libkml < Formula
       # If the patch is applied, this find and replace will be unnecessary, but also
       # harmless
       inreplace 'configure.ac', '-Werror', ''
+
+      # Compatibility with Automake 1.13 and newer.
+      inreplace 'configure.ac', 'AM_CONFIG_HEADER', 'AC_CONFIG_HEADER'
 
       system "./autogen.sh"
     end

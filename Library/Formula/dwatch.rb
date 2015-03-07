@@ -19,7 +19,7 @@ class Dwatch < Formula
     etc.install "dwatch.conf"
   end
 
-  test do
+  def test
     # '-h' is not actually an option, but it exits 0
     system "#{bin}/dwatch", "-h"
   end

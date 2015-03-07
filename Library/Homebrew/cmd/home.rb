@@ -1,4 +1,4 @@
-module Homebrew
+module Homebrew extend self
   def home
     if ARGV.named.empty?
       exec_browser HOMEBREW_WWW

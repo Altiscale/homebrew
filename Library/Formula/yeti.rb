@@ -1,20 +1,17 @@
+require 'formula'
+
 class Yeti < Formula
-  homepage "https://mth.github.io/yeti/"
-  url "https://github.com/mth/yeti/archive/v0.9.9.tar.gz"
-  sha1 "d4b3fee9e9e1c117f1a73b147695a24a217c2658"
+  homepage 'http://mth.github.io/yeti/'
+  url 'https://github.com/mth/yeti/archive/v0.9.8.tar.gz'
+  sha1 '64e6174f765fd1444eff70c4a96ae76b2daa6c79'
 
-  head "https://github.com/mth/yeti.git"
+  head 'https://github.com/mth/yeti.git'
 
-  depends_on :ant => :build
-  depends_on :java => "1.7"
+  depends_on :ant
 
   def install
-    system "ant", "jar"
+    system "ant jar"
     libexec.install "yeti.jar"
     bin.write_jar_script libexec/"yeti.jar", "yeti", "-server"
-  end
-
-  test do
-    assert_equal "3\n", shell_output("#{bin}/yeti -e 'do x: x+1 done 2'")
   end
 end

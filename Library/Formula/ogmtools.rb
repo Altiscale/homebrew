@@ -10,9 +10,10 @@ class Ogmtools < Formula
   depends_on 'libdvdread' => :optional
 
   # Borrow patch from MacPorts
-  patch :p0 do
-    url "https://trac.macports.org/export/87593/trunk/dports/multimedia/ogmtools/files/common.h.diff"
-    sha1 "cd7206eebbe939f1c4e0203c612ad5aeb6d8ea56"
+  def patches
+    {:p0 => [
+     'https://trac.macports.org/export/87593/trunk/dports/multimedia/ogmtools/files/common.h.diff'
+    ]}
   end
 
   def install

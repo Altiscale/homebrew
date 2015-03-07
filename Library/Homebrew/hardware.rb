@@ -8,19 +8,19 @@ class Hardware
     PPC_64BIT_ARCHS   = [:ppc64].freeze
 
     def type
-      :dunno
+      @type || :dunno
     end
 
     def family
-      :dunno
+      @family || :dunno
     end
 
     def cores
-      1
+      @cores || 1
     end
 
     def bits
-      64
+      @bits || 64
     end
 
     def is_32_bit?
@@ -37,14 +37,6 @@ class Hardware
 
     def ppc?
       type == :ppc
-    end
-
-    def features
-      []
-    end
-
-    def feature?(name)
-      features.include?(name)
     end
   end
 

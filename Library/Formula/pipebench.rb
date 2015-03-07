@@ -11,7 +11,7 @@ class Pipebench < Formula
     man1.install 'pipebench.1'
   end
 
-  test do
+  def test
     system "#{bin}/pipebench", "-h"
   end
 end

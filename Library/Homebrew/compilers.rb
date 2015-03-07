@@ -1,130 +1,94 @@
-module CompilerConstants
-  GNU_GCC_VERSIONS = 3..9
-  GNU_GCC_REGEXP = /^gcc-(4\.[3-9])$/
+class Compiler < Struct.new(:name, :priority)
+  def build
+    MacOS.send("#{name}_build_version")
+  end
+
+  def version
+    MacOS.non_apple_gcc_version(name) if name.is_a? String
+  end
 end
 
 class CompilerFailure
-  attr_reader :name
-  attr_rw :version
+  attr_reader :compiler, :version
+  attr_rw :build, :cause
 
-  # Allows Apple compiler `fails_with` statements to keep using `build`
-  # even though `build` and `version` are the same internally
-  alias_method :build, :version
-
-  # The cause is no longer used so we need not hold a reference to the string
-  def cause(_); end
-
-  def self.for_standard standard
-    COLLECTIONS.fetch(standard) do
-      raise ArgumentError, "\"#{standard}\" is not a recognized standard"
-    end
-  end
-
-  def self.create(spec, &block)
+  def initialize compiler, &block
     # Non-Apple compilers are in the format fails_with compiler => version
-    if spec.is_a?(Hash)
-      _, major_version = spec.each { |e| break e }
-      name = "gcc-#{major_version}"
-      # so fails_with :gcc => '4.8' simply marks all 4.8 releases incompatible
-      version = "#{major_version}.999"
+    if compiler.is_a? Hash
+      # currently the only compiler for this case is GCC
+      _, @version = compiler.shift
+      @compiler = 'gcc-' + @version.match(/(\d\.\d)/)[0]
     else
-      name = spec
-      version = 9999
+      @compiler = compiler
     end
-    new(name, version, &block)
-  end
 
-  def initialize(name, version, &block)
-    @name = name
-    @version = version
     instance_eval(&block) if block_given?
+    @build = (@build || 9999).to_i unless compiler.is_a? Hash
+  end
+end
+
+class CompilerQueue
+  def initialize
+    @array = []
   end
 
-  def ===(compiler)
-    name == compiler.name && version >= compiler.version
+  def <<(o)
+    @array << o
+    self
   end
 
-  def inspect
-    "#<#{self.class.name}: #{name} #{version}>"
+  def pop
+    @array.delete(@array.max { |a, b| a.priority <=> b.priority })
   end
 
-  COLLECTIONS = {
-    :cxx11 => [
-      create(:gcc_4_0),
-      create(:gcc),
-      create(:llvm),
-      create(:clang) { build 425 },
-      create(:gcc => "4.3"),
-      create(:gcc => "4.4"),
-      create(:gcc => "4.5"),
-      create(:gcc => "4.6"),
-    ],
-    :openmp => [create(:clang)],
-  }
+  def empty?
+    @array.empty?
+  end
 end
 
 class CompilerSelector
-  include CompilerConstants
+  def initialize(f)
+    @f = f
+    @compilers = CompilerQueue.new
+    %w{clang llvm gcc gcc_4_0}.map(&:to_sym).each do |cc|
+      unless MacOS.send("#{cc}_build_version").nil?
+        @compilers << Compiler.new(cc, priority_for(cc))
+      end
+    end
 
-  Compiler = Struct.new(:name, :version)
-
-  COMPILER_PRIORITY = {
-    :clang   => [:clang, :gcc, :llvm, :gnu, :gcc_4_0],
-    :gcc     => [:gcc, :llvm, :gnu, :clang, :gcc_4_0],
-    :llvm    => [:llvm, :gcc, :gnu, :clang, :gcc_4_0],
-    :gcc_4_0 => [:gcc_4_0, :gcc, :llvm, :gnu, :clang],
-  }
-
-  def self.select_for(formula, compilers=self.compilers)
-    new(formula, MacOS, compilers).compiler
-  end
-
-  def self.compilers
-    COMPILER_PRIORITY.fetch(MacOS.default_compiler)
-  end
-
-  attr_reader :formula, :failures, :versions, :compilers
-
-  def initialize(formula, versions, compilers)
-    @formula = formula
-    @failures = formula.compiler_failures
-    @versions = versions
-    @compilers = compilers
-  end
-
-  def compiler
-    find_compiler { |c| return c.name unless fails_with?(c) }
-    raise CompilerSelectionError.new(formula)
-  end
-
-  private
-
-  def find_compiler
-    compilers.each do |compiler|
-      case compiler
-      when :gnu
-        GNU_GCC_VERSIONS.reverse_each do |v|
-          name = "gcc-4.#{v}"
-          version = compiler_version(name)
-          yield Compiler.new(name, version) if version
-        end
-      else
-        version = compiler_version(compiler)
-        yield Compiler.new(compiler, version) if version
+    # non-Apple GCC 4.x
+    SharedEnvExtension::GNU_GCC_VERSIONS.each do |v|
+      unless MacOS.non_apple_gcc_version("gcc-4.#{v}").nil?
+        # priority is based on version, with newest preferred first
+        @compilers << Compiler.new("gcc-4.#{v}", 1.0 + v/10.0)
       end
     end
   end
 
-  def fails_with?(compiler)
-    failures.any? { |failure| failure === compiler }
+  # Attempts to select an appropriate alternate compiler, but
+  # if none can be found raises CompilerError instead
+  def compiler
+    begin
+      cc = @compilers.pop
+    end while @f.fails_with?(cc)
+
+    if cc.nil?
+      raise CompilerSelectionError
+    else
+      cc.name
+    end
   end
 
-  def compiler_version(name)
-    case name
-    when GNU_GCC_REGEXP
-      versions.non_apple_gcc_version(name)
-    else
-      versions.send("#{name}_build_version")
+  private
+
+  def priority_for(cc)
+    case cc
+    when :clang then MacOS.clang_build_version >= 318 ? 3 : 0.5
+    when :gcc   then 2.5
+    when :llvm  then 2
+    when :gcc_4_0 then 0.25
+    # non-Apple gcc compilers
+    else 1.5
     end
   end
 end

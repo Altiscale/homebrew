@@ -8,9 +8,10 @@ class Unrtf < Formula
 
   # Per MacPorts, add a return value to fix compiling with clang, and fix
   # a bad memory access.
-  patch :p0 do
-    url "https://trac.macports.org/export/94428/trunk/dports/textproc/unrtf/files/patch-src-attr.c.diff"
-    sha1 "8a6a111373d6bf18750bbb5bf2d91383ac6aa584"
+  def patches
+    { :p0 => [
+    "https://trac.macports.org/export/94428/trunk/dports/textproc/unrtf/files/patch-src-attr.c.diff"
+    ]}
   end
 
   def install

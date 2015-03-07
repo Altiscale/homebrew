@@ -11,19 +11,9 @@ class Mtools < Formula
   depends_on :x11 => :optional
 
   def install
-    args = ["LIBS=-liconv",
-            "--disable-debug",
-            "--prefix=#{prefix}"]
-
-    if build.with? 'x11'
-      args << "--with-x"
-    else
-      args << "--without-x"
-    end
-
-    system "./configure", *args
-    system "make"
-    ENV.j1
-    system "make", "install"
+    system "./configure", "LIBS=-liconv",
+                          "--disable-debug",
+                          "--prefix=#{prefix}"
+    system "make install"
   end
 end

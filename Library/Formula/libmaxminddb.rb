@@ -1,25 +1,17 @@
+require 'formula'
+
 class Libmaxminddb < Formula
-  homepage "https://github.com/maxmind/libmaxminddb"
-  url "https://github.com/maxmind/libmaxminddb/releases/download/0.5.3/libmaxminddb-0.5.3.tar.gz"
-  sha1 "ce6dd4fecb1a4c97cfede70e6fc6af863ffeddab"
+  homepage 'https://github.com/maxmind/libmaxminddb'
+  url 'https://github.com/maxmind/libmaxminddb/releases/download/0.5.2/libmaxminddb-0.5.2.tar.gz'
+  sha1 'db7618a97c222cab0a0ba2fb8439abcd1465f10c'
+  head 'https://github.com/maxmind/libmaxminddb.git'
 
-  bottle do
-    cellar :any
-    revision 1
-    sha1 "9ef726ff11d9933e9aa1df2ce8adc21493714259" => :yosemite
-    sha1 "0e3a37a3ad55d27220ec49ee653016ecc649d952" => :mavericks
-    sha1 "3888352b39e903d2f30d6947db0c041ecaa3540a" => :mountain_lion
+  if build.head?
+    depends_on 'autoconf' => :build
+    depends_on 'automake' => :build
+    depends_on 'libtool' => :build
   end
-
-  head do
-    url "https://github.com/maxmind/libmaxminddb.git"
-
-    depends_on "autoconf" => :build
-    depends_on "automake" => :build
-    depends_on "libtool" => :build
-  end
-
-  depends_on "geoipupdate" => :optional
+  depends_on 'geoipupdate' => :optional
 
   option :universal
 

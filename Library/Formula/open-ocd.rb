@@ -2,46 +2,52 @@ require 'formula'
 
 class OpenOcd < Formula
   homepage 'http://sourceforge.net/projects/openocd/'
-  url 'https://downloads.sourceforge.net/project/openocd/openocd/0.8.0/openocd-0.8.0.tar.bz2'
-  sha1 '10bf9eeb54e03083cb1a101785b2d69fbdf18f31'
+  url 'http://downloads.sourceforge.net/project/openocd/openocd/0.7.0/openocd-0.7.0.tar.bz2'
+  sha1 '40fa518af4fae273f24478249fc03aa6fcce9176'
 
   head do
     url 'git://git.code.sf.net/p/openocd/code'
 
-    depends_on "autoconf" => :build
-    depends_on "automake" => :build
-    depends_on "libtool" => :build
-    depends_on "texinfo" => :build
+    depends_on :autoconf
+    depends_on :automake
+    depends_on :libtool
   end
 
-  option 'without-hidapi', 'Disable building support for devices using HIDAPI (CMSIS-DAP)'
-  option 'without-libftdi', 'Disable building support for libftdi-based drivers (USB-Blaster, ASIX Presto, OpenJTAG)'
-  option 'without-libusb',  'Disable building support for all other USB adapters'
+  option 'enable-ft2232_libftdi', 'Enable building support for FT2232 based devices with libftdi driver'
+  option 'enable-ft2232_ftd2xx',  'Enable building support for FT2232 based devices with FTD2XX driver'
 
-  depends_on 'pkg-config' => :build
-  depends_on 'libusb' => :recommended
-  # some drivers are still not converted to libusb-1.0
-  depends_on 'libusb-compat' if build.with? 'libusb'
-  depends_on 'libftdi' => :recommended
-  depends_on 'hidapi' => :recommended
+  depends_on 'libusb-compat'
+  depends_on 'libftdi0' if build.include? 'enable-ft2232_libftdi'
 
   def install
-    # all the libusb and hidapi-based drivers are auto-enabled when
-    # the corresponding libraries are present in the system
     args = %W[
       --disable-dependency-tracking
       --prefix=#{prefix}
-      --enable-dummy
+      --enable-ftdi
+      --enable-arm-jtag-ew
+      --enable-jlink
+      --enable-rlink
+      --enable-stlink
+      --enable-ulink
+      --enable-usbprog
+      --enable-vsllink
+      --enable-ep93xx
+      --enable-at91rm9200
+      --enable-ecosboard
+      --enable-opendous
+      --enable-osbdm
       --enable-buspirate
-      --enable-jtag_vpi
-      --enable-remote-bitbang
     ]
 
-    if build.with? "libftdi"
-      args << "--enable-usb_blaster_libftdi"
+    if build.include? "enable-ft2232_libftdi"
+      args << "--enable-ft2232_libftdi"
       args << "--enable-presto_libftdi"
-      args << "--enable-openjtag_ftdi"
-      args << "--enable-legacy-ft2232_libftdi"
+      args << "--enable-usb_blaster_libftdi"
+    end
+
+    if build.include? "enable-ft2232_ftd2xx"
+      args << "--enable-ft2232_ftd2xx"
+      args << "--enable-presto_ftd2xx"
     end
 
     ENV['CCACHE'] = 'none'

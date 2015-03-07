@@ -7,7 +7,9 @@ class Jsvc < Formula
   sha1 'f99fa9bcbc3faf6660e760af099eb003e2553b39'
 
   # Enable Java 7 JVMs: https://issues.apache.org/jira/browse/DAEMON-281
-  patch :DATA
+  def patches
+    DATA
+  end
 
   def install
     ENV.append "CFLAGS", "-arch #{MacOS.preferred_arch}"

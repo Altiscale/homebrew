@@ -9,7 +9,7 @@ class Spark < Formula
     bin.install "spark"
   end
 
-  test do
+  def test
     system "#{bin}/spark"
   end
 end

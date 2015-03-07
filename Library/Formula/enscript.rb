@@ -19,7 +19,9 @@ class Enscript < Formula
   end
 
   test do
-    assert_match /GNU Enscript #{Regexp.escape(version)}/,
-                 shell_output("#{bin}/enscript -V")
+    require 'open3'
+    Open3.popen3("#{bin}/enscript", "-V") do |_, stdout, _|
+      assert_match /GNU Enscript #{Regexp.escape(version)}/, stdout.read
+    end
   end
 end

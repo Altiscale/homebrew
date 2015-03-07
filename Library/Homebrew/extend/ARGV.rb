@@ -1,57 +1,61 @@
 module HomebrewArgvExtension
   def named
-    @named ||= self - options_only
+    @named ||= reject{|arg| arg[0..0] == '-'}
   end
 
   def options_only
-    select { |arg| arg.start_with?("-") }
-  end
-
-  def flags_only
-    select { |arg| arg.start_with?("--") }
+    select {|arg| arg[0..0] == '-'}
   end
 
   def formulae
-    require "formula"
-    @formulae ||= (downcased_unique_named - casks).map { |name| Formulary.factory(name, spec) }
-  end
-
-  def casks
-    @casks ||= downcased_unique_named.grep HOMEBREW_CASK_TAP_FORMULA_REGEX
+    require 'formula'
+    @formulae ||= downcased_unique_named.map{ |name| Formula.factory name }
+    return @formulae
   end
 
   def kegs
+    rack = nil
     require 'keg'
     require 'formula'
     @kegs ||= downcased_unique_named.collect do |name|
-      canonical_name = Formulary.canonical_name(name)
-      rack = HOMEBREW_CELLAR/canonical_name
-      dirs = rack.directory? ? rack.subdirs : []
-
-      raise NoSuchKegError.new(canonical_name) if dirs.empty?
-
-      linked_keg_ref = HOMEBREW_LIBRARY.join("LinkedKegs", canonical_name)
-      opt_prefix = HOMEBREW_PREFIX.join("opt", canonical_name)
-
-      begin
-        if opt_prefix.symlink? && opt_prefix.directory?
-          Keg.new(opt_prefix.resolved_path)
-        elsif linked_keg_ref.symlink? && linked_keg_ref.directory?
-          Keg.new(linked_keg_ref.resolved_path)
-        elsif dirs.length == 1
-          Keg.new(dirs.first)
-        elsif (prefix = Formulary.factory(canonical_name).prefix).directory?
-          Keg.new(prefix)
-        else
-          raise MultipleVersionsInstalledError.new(canonical_name)
-        end
-      rescue FormulaUnavailableError
-        raise <<-EOS.undent
-          Multiple kegs installed to #{rack}
-          However we don't know which one you refer to.
-          Please delete (with rm -rf!) all but one and then try again.
-        EOS
+      canonical_name = Formula.canonical_name(name)
+      rack = HOMEBREW_CELLAR + if canonical_name.include? "/"
+        # canonical_name returns a path if it was a formula installed via a
+        # URL. And we only want the name. FIXME that function is insane.
+        Pathname.new(canonical_name).stem
+      else
+        canonical_name
       end
+      dirs = rack.children.select{ |pn| pn.directory? } rescue []
+      raise NoSuchKegError.new(name) if not rack.directory? or dirs.length == 0
+
+      linked_keg_ref = HOMEBREW_REPOSITORY/"Library/LinkedKegs"/name
+
+      if not linked_keg_ref.symlink?
+        if dirs.length == 1
+          Keg.new(dirs.first)
+        else
+          prefix = Formula.factory(canonical_name).prefix
+          if prefix.directory?
+            Keg.new(prefix)
+          else
+            raise MultipleVersionsInstalledError.new(name)
+          end
+        end
+      else
+        Keg.new(linked_keg_ref.realpath)
+      end
+    end
+  rescue FormulaUnavailableError
+    if rack
+      raise <<-EOS.undent
+        Multiple kegs installed to #{rack}
+        However we don't know which one you refer to.
+        Please delete (with rm -rf!) all but one and then try again.
+        Sorry, we know this is lame.
+      EOS
+    else
+      raise
     end
   end
 
@@ -90,20 +94,12 @@ module HomebrewArgvExtension
     include?('--dry-run') || switch?('n')
   end
 
-  def git?
-    flag? "--git"
-  end
-
   def homebrew_developer?
     include? '--homebrew-developer' or !ENV['HOMEBREW_DEVELOPER'].nil?
   end
 
   def ignore_deps?
     include? '--ignore-dependencies'
-  end
-
-  def only_deps?
-    include? '--only-dependencies'
   end
 
   def json
@@ -143,11 +139,14 @@ module HomebrewArgvExtension
   end
 
   def build_from_source?
-    switch?("s") || include?("--build-from-source") || !!ENV["HOMEBREW_BUILD_FROM_SOURCE"]
+    include? '--build-from-source' or !ENV['HOMEBREW_BUILD_FROM_SOURCE'].nil? \
+      or build_head? or build_devel? or build_universal? or build_bottle?
   end
 
   def flag? flag
-    options_only.include?(flag) || switch?(flag[2, 1])
+    options_only.any? do |arg|
+      arg == flag || arg[1..1] != '-' && arg.include?(flag[2..2])
+    end
   end
 
   def force_bottle?
@@ -155,9 +154,11 @@ module HomebrewArgvExtension
   end
 
   # eg. `foo -ns -i --bar` has three switches, n, s and i
-  def switch? char
-    return false if char.length > 1
-    options_only.any? { |arg| arg[1, 1] != "-" && arg.include?(char) }
+  def switch? switch_character
+    return false if switch_character.length > 1
+    options_only.any? do |arg|
+      arg[1..1] != '-' && arg.include?(switch_character)
+    end
   end
 
   def usage
@@ -165,25 +166,32 @@ module HomebrewArgvExtension
     Homebrew.help_s
   end
 
+  def filter_for_dependencies
+    # Clears some flags that affect installation, yields to a block, then
+    # restores to original state.
+    old_args = clone
+
+    flags_to_clear = %w[
+      --build-bottle
+      --debug -d
+      --devel
+      --fresh
+      --interactive -i
+      --HEAD
+    ]
+    flags_to_clear.concat %w[--verbose -v] if quieter?
+    flags_to_clear.each {|flag| delete flag}
+
+    yield
+  ensure
+    replace(old_args)
+  end
+
   def cc
     value 'cc'
   end
 
-  def env
-    value 'env'
-  end
-
   private
-
-  def spec
-    if include?("--HEAD")
-      :head
-    elsif include?("--devel")
-      :devel
-    else
-      :stable
-    end
-  end
 
   def downcased_unique_named
     # Only lowercase names, not paths or URLs

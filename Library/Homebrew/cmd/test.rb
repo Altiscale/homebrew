@@ -1,9 +1,10 @@
-require "extend/ENV"
-require "timeout"
-require "debrew"
-require "formula_assertions"
+require 'extend/ENV'
+require 'hardware'
+require 'keg'
+require 'timeout'
+require 'test/unit/assertions'
 
-module Homebrew
+module Homebrew extend self
   TEST_TIMEOUT_SECONDS = 5*60
 
   def test
@@ -26,25 +27,16 @@ module Homebrew
       end
 
       puts "Testing #{f.name}"
-
-      f.extend(Assertions)
-      f.extend(Debrew::Formula) if ARGV.debug?
-
-      env = ENV.to_hash
-
       begin
         # tests can also return false to indicate failure
         Timeout::timeout TEST_TIMEOUT_SECONDS do
-          raise "test returned false" if f.run_test == false
+          raise if f.test == false
         end
-      rescue Assertions::FailedAssertion => e
+      rescue Test::Unit::AssertionFailedError => e
         ofail "#{f.name}: failed"
         puts e.message
-      rescue Exception => e
+      rescue Exception
         ofail "#{f.name}: failed"
-        puts e, e.backtrace
-      ensure
-        ENV.replace(env)
       end
     end
   end

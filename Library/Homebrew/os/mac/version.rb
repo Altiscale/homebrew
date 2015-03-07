@@ -4,7 +4,6 @@ module OS
   module Mac
     class Version < ::Version
       SYMBOLS = {
-        :yosemite      => '10.10',
         :mavericks     => '10.9',
         :mountain_lion => '10.8',
         :lion          => '10.7',
@@ -14,26 +13,24 @@ module OS
       }
 
       def self.from_symbol(sym)
-        str = SYMBOLS.fetch(sym) do
-          raise ArgumentError, "unknown version #{sym.inspect}"
-        end
-        new(str)
-      end
-
-      def initialize(*args)
-        super
-        @comparison_cache = {}
+        new(SYMBOLS.fetch(sym))
       end
 
       def <=>(other)
-        @comparison_cache.fetch(other) do
-          v = SYMBOLS.fetch(other) { other.to_s }
-          @comparison_cache[other] = super(Version.new(v))
-        end
+        v = SYMBOLS.fetch(other, other.to_s)
+        super(Version.new(v))
       end
 
       def to_sym
-        SYMBOLS.invert.fetch(@version) { :dunno }
+        case @version
+        when '10.9' then :mavericks
+        when '10.8' then :mountain_lion
+        when '10.7' then :lion
+        when '10.6' then :snow_leopard
+        when '10.5' then :leopard
+        when '10.4' then :tiger
+        else :dunno
+        end
       end
 
       def pretty_name

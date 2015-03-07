@@ -8,7 +8,9 @@ class GitNow < Formula
 
   depends_on 'gnu-getopt'
 
-  patch :DATA
+  def patches
+    DATA
+  end
 
   def install
     system "make", "prefix=#{libexec}", "install"

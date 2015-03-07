@@ -9,10 +9,11 @@ class Xsane < Formula
   depends_on 'gtk+'
   depends_on 'sane-backends'
 
-  # Needed to compile against libpng 1.5
-  patch :p0 do
-    url "https://trac.macports.org/export/113352/trunk/dports/graphics/xsane/files/patch-src__xsane-save.c-libpng15-compat.diff"
-    sha1 "c303b09c3007a12557095cf2e2a2d3328dd4cf07"
+  def patches
+    # Needed to compile against libpng 1.5
+    {:p0 =>
+     "https://trac.macports.org/export/113352/trunk/dports/graphics/xsane/files/patch-src__xsane-save.c-libpng15-compat.diff"
+    }
   end
 
   def install

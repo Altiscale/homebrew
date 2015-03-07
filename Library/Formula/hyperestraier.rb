@@ -3,9 +3,8 @@ require 'formula'
 class EucjpMecabIpadic < Requirement
   fatal true
 
-  def initialize tags=[]
-    super
-    @mecab_ipadic_installed = Formula['mecab-ipadic'].installed?
+  def initialize
+    @mecab_ipadic_installed = Formula.factory('mecab-ipadic').installed?
   end
 
   satisfy { @mecab_ipadic_installed && mecab_dic_charset == 'euc' }

@@ -1,12 +1,12 @@
 require 'formula'
 
 class Aiccu < Formula
-  homepage 'https://www.sixxs.net/tools/aiccu/'
+  homepage 'http://www.sixxs.net/faq/aiccu/'
   url 'http://www.sixxs.net/archive/sixxs/aiccu/unix/aiccu_20070115.tar.gz'
   sha1 '7b3c51bfe291c777e74b2688e9339b4fb72e6a39'
 
   # Patches per MacPorts
-  patch :DATA
+  def patches; DATA; end
 
   def install
     inreplace 'doc/aiccu.conf', 'daemonize true', 'daemonize false'
@@ -27,7 +27,7 @@ class Aiccu < Formula
       <string>#{plist_name}</string>
       <key>ProgramArguments</key>
       <array>
-        <string>#{opt_sbin}/aiccu</string>
+        <string>#{opt_prefix}/sbin/aiccu</string>
         <string>start</string>
         <string>#{etc}/aiccu.conf</string>
       </array>

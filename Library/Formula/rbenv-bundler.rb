@@ -1,16 +1,13 @@
-class RbenvBundler < Formula
-  homepage "https://github.com/carsomyr/rbenv-bundler"
-  url "https://github.com/carsomyr/rbenv-bundler/archive/0.99.tar.gz"
-  sha1 "21dd20ee363d8b8c0807e659ffa2d572c67848b5"
-  head "https://github.com/carsomyr/rbenv-bundler.git"
+require 'formula'
 
-  depends_on "rbenv"
+class RbenvBundler < Formula
+  homepage 'https://github.com/carsomyr/rbenv-bundler'
+  url 'https://github.com/carsomyr/rbenv-bundler/archive/0.96.tar.gz'
+  sha1 '02339c604c840f24b66523c9faad6ed82500eda1'
+
+  depends_on 'rbenv'
 
   def install
-    prefix.install Dir["*"]
-  end
-
-  test do
-    assert shell_output("rbenv hooks exec").include? "bundler.bash"
+    prefix.install Dir['*']
   end
 end

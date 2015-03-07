@@ -12,7 +12,7 @@ class Mmsrip < Formula
     system "make install"
   end
 
-  test do
+  def test
     system "#{bin}/mmsrip", "-v"
   end
 end

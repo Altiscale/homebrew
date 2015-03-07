@@ -1,6 +1,6 @@
 require 'formula'
 
-module Homebrew
+module Homebrew extend self
   def edit
     unless (HOMEBREW_REPOSITORY/'.git').directory?
       raise <<-EOS.undent
@@ -16,9 +16,9 @@ module Homebrew
       if editor == "mate" or editor == "subl"
         # If the user is using TextMate or Sublime Text,
         # give a nice project view instead.
-        exec_editor HOMEBREW_REPOSITORY+"bin/brew",
-                    HOMEBREW_REPOSITORY+'README.md',
-                    HOMEBREW_REPOSITORY+".gitignore",
+        exec editor, HOMEBREW_REPOSITORY+"bin/brew",
+                     HOMEBREW_REPOSITORY+'README.md',
+                     HOMEBREW_REPOSITORY+".gitignore",
                     *library_folders
       else
         exec_editor HOMEBREW_REPOSITORY
@@ -26,8 +26,12 @@ module Homebrew
     else
       # Don't use ARGV.formulae as that will throw if the file doesn't parse
       paths = ARGV.named.map do |name|
-        name = Formulary.canonical_name(name)
-        Formula.path(name)
+        name = Formula.canonical_name name
+        if name.include? '/'
+          Pathname.new(name)
+        else
+          HOMEBREW_REPOSITORY+"Library/Formula/#{name}.rb"
+        end
       end
       unless ARGV.force?
         paths.each do |path|

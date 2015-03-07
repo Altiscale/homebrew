@@ -23,7 +23,10 @@ class Ispell < Formula
 
     system "make config.sh"
     chmod 0644, "config.sh"
-    inreplace "config.sh", "/usr/share/dict", "#{share}/dict"
+    inreplace "config.sh" do |s|
+      s.gsub! '/usr/share/dict', "#{share}/dict"
+      s.gsub! /yacc/, MacOS.locate('yacc')
+    end
 
     (lib/'ispell').mkpath
     system "make all"

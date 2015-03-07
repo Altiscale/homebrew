@@ -2,15 +2,15 @@ require 'formula'
 
 class Mongoose < Formula
   homepage 'https://github.com/valenok/mongoose'
-  url 'https://github.com/valenok/mongoose/archive/5.1.tar.gz'
-  sha1 '0a2d0b83a7f5650a6e6c50fd7ba18a06ebe79335'
+  url 'https://github.com/valenok/mongoose/archive/4.1.tar.gz'
+  sha1 'e9c25fec4e1b9b929101201beacb9c5ba51ad78c'
 
   def install
     cd 'build' do
-      system 'make all'
+      system 'make mac'
       bin.install "mongoose"
     end
     include.install 'mongoose.h'
-    prefix.install 'examples', 'docs'
+    prefix.install 'examples', 'UserManual.md'
   end
 end

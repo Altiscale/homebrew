@@ -5,7 +5,10 @@ class Ahcpd < Formula
   url 'http://www.pps.univ-paris-diderot.fr/~jch/software/files/ahcpd-0.53.tar.gz'
   sha1 '0d8ad31785357758abeb371f0431dbe08718af92'
 
-  patch :DATA
+  def patches
+    # fixes man path for homebrew
+    DATA
+  end
 
   def install
     system "make", "LDLIBS=''"

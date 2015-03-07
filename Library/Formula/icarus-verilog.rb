@@ -11,7 +11,13 @@ class IcarusVerilog < Formula
   end
 
   def install
-    system "autoconf" if build.head?
+    # Fixes an assertion when XCode-4.4 tries to link with clang or llvm-gcc.
+    ENV['LD'] = MacOS.locate("ld")
+    # Generate configure for head build
+    if build.head?
+      system "autoconf"
+    end
+    # Configure
     system "./configure", "--prefix=#{prefix}"
     # Separate steps, as install does not depend on compile properly
     system 'make'

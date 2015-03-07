@@ -14,7 +14,7 @@ class Toilet < Formula
     system "make install"
   end
 
-  test do
+  def test
     system "#{bin}/toilet", "--version"
   end
 end

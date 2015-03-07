@@ -8,9 +8,9 @@ class Irrtoolset < Formula
   head do
     url 'svn://irrtoolset.isc.org/trunk'
 
-    depends_on "autoconf" => :build
-    depends_on "automake" => :build
-    depends_on "libtool" => :build
+    depends_on :autoconf
+    depends_on :automake
+    depends_on :libtool
   end
 
   depends_on 'pkg-config' => :build
@@ -25,7 +25,7 @@ class Irrtoolset < Formula
     system "make install"
   end
 
-  test do
+  def test
     system "#{bin}/peval", "ANY"
   end
 end

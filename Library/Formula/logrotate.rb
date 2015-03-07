@@ -9,7 +9,9 @@ class Logrotate < Formula
 
   # Per MacPorts, let these variables be overridden by ENV vars.
   # Also, use HOMEBREW suggested locations for run and log files.
-  patch :DATA
+  def patches
+    DATA
+  end
 
   def install
     # Otherwise defaults to /bin/gz

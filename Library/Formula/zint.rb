@@ -4,16 +4,14 @@ class Zint < Formula
   homepage 'http://zint.github.io/'
   url 'https://github.com/downloads/zint/zint/zint-2.4.3.tar.gz'
   sha1 '300732d03c77ccf1031c485a20f09b51495ef5a3'
-  revision 1
 
   head 'git://zint.git.sourceforge.net/gitroot/zint/zint'
 
-  option "with-qt", "Build the zint-qt GUI"
-  deprecated_option "qt" => "with-qt"
+  option 'qt', 'Build the zint-qt GUI.'
 
   depends_on 'cmake' => :build
-  depends_on 'libpng'
-  depends_on 'qt' => :optional
+  depends_on :libpng
+  depends_on 'qt' if build.include? 'qt'
 
   def install
     mkdir 'zint-build' do

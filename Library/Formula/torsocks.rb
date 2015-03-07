@@ -2,19 +2,14 @@ require 'formula'
 
 class Torsocks < Formula
   homepage 'https://gitweb.torproject.org/torsocks.git/'
-  url 'https://git.torproject.org/torsocks.git', :tag => 'v2.0.0'
+  url 'https://git.torproject.org/torsocks.git', :tag => '1.3'
 
-  head 'https://git.torproject.org/torsocks.git'
+  head 'https://git.torproject.org/torsocks.git', :branch => 'master'
 
-  bottle do
-    sha1 "75a53b9a12c5f3b1dbcdfd659f9bdecf6703a2f8" => :yosemite
-    sha1 "02573816190ad4fa6ee829e59b293224a90b6dad" => :mavericks
-    sha1 "d10034aa108b8a4baf2a6ecd73457cf279681eb3" => :mountain_lion
-  end
-
-  depends_on "autoconf" => :build
-  depends_on "automake" => :build
-  depends_on "libtool" => :build
+  depends_on :autoconf
+  depends_on :automake
+  depends_on :libtool
+  depends_on 'tor'
 
   def install
     system "./autogen.sh"
@@ -23,7 +18,7 @@ class Torsocks < Formula
     system "make install"
   end
 
-  test do
-    system "#{bin}/torsocks", "--help"
+  def test
+    system "#{bin}/torsocks"
   end
 end

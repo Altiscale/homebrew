@@ -1,50 +1,49 @@
+require 'formula'
+
 class Tbb < Formula
-  homepage "http://www.threadingbuildingblocks.org/"
-  url "https://www.threadingbuildingblocks.org/sites/default/files/software_releases/source/tbb43_20141023oss_src.tgz"
-  sha1 "aaecdc97049fbe3c623be46c4e1261b74a1a41a3"
-  version "4.3-20141023"
-
-  bottle do
-    cellar :any
-    sha1 "f3111568e5b600345ca518027771a5169fa4f981" => :yosemite
-    sha1 "79e0ed2f2f78f7686a22f155df083ed3a678159a" => :mavericks
-    sha1 "ef6d80cc918ee3a2305cf470cb81c48b48e73bd2" => :mountain_lion
-  end
-
-  # requires malloc features first introduced in Lion
-  # https://github.com/Homebrew/homebrew/issues/32274
-  depends_on :macos => :lion
+  homepage 'http://www.threadingbuildingblocks.org/'
+  url 'https://www.threadingbuildingblocks.org/sites/default/files/software_releases/source/tbb42_20130725oss_src.tgz'
+  sha1 'f354bd9b67295f65c43531b751e34f483ed8a024'
+  version '4.2'
 
   option :cxx11
+
+  fails_with :llvm do
+    cause 'llvm is not supported on macos. Add build/macos.llvm.inc file with compiler-specific settings.'
+  end
+
+  # tbb uses the wrong command (-v, verbose) to fetch the version from the
+  # compiler, causing problems if the compiler returns additional debug info
+  # Reported upstream at http://software.intel.com/en-us/forums/topic/475120
+  def patches; DATA; end
 
   def install
     # Intel sets varying O levels on each compile command.
     ENV.no_optimization
-
-    args = %W[tbb_build_prefix=BUILDPREFIX]
-
-    if build.cxx11?
-      ENV.cxx11
-      args << "cpp0x=1" << "stdlib=libc++"
-    end
-
+    ENV.cxx11 if build.cxx11?
+    # Override build prefix so we can copy the dylibs out of the same place
+    # no matter what system we're on, and use our compilers.
+    args = ['tbb_build_prefix=BUILDPREFIX',
+            "compiler=#{ENV.compiler}"]
+    args << (MacOS.prefer_64_bit? ? "arch=intel64" : "arch=ia32")
+    args << "cpp0x=1" << "stdlib=libc++" if build.cxx11?
     system "make", *args
-    lib.install Dir["build/BUILDPREFIX_release/*.dylib"]
-    include.install "include/tbb"
-  end
-
-  test do
-    (testpath/"test.cpp").write <<-EOS.undent
-      #include <tbb/task_scheduler_init.h>
-      #include <iostream>
-
-      int main()
-      {
-        std::cout << tbb::task_scheduler_init::default_num_threads();
-        return 0;
-      }
-    EOS
-    system ENV.cxx, "test.cpp", "-ltbb", "-o", "test"
-    system "./test"
+    lib.install Dir['build/BUILDPREFIX_release/*.dylib']
+    include.install 'include/tbb'
   end
 end
+
+__END__
+diff --git a/build/version_info_macos.sh b/build/version_info_macos.sh
+index 5970aad..20c863a 100644
+--- a/build/version_info_macos.sh
++++ b/build/version_info_macos.sh
+@@ -31,7 +31,7 @@ echo "#define __TBB_VERSION_STRINGS(N) \\"
+ echo '#N": BUILD_HOST'"\t\t"`hostname -s`" ("`arch`")"'" ENDL \'
+ echo '#N": BUILD_OS'"\t\t"`sw_vers -productName`" version "`sw_vers -productVersion`'" ENDL \'
+ echo '#N": BUILD_KERNEL'"\t"`uname -v`'" ENDL \'
+-echo '#N": BUILD_GCC'"\t\t"`gcc -v </dev/null 2>&1 | grep 'version'`'" ENDL \'
++echo '#N": BUILD_GCC'"\t\t"`gcc --version </dev/null 2>&1 | head -1`'" ENDL \'
+ [ -z "$COMPILER_VERSION" ] || echo '#N": BUILD_COMPILER'"\t"$COMPILER_VERSION'" ENDL \'
+ echo '#N": BUILD_TARGET'"\t$arch on $runtime"'" ENDL \'
+ echo '#N": BUILD_COMMAND'"\t"$*'" ENDL \'

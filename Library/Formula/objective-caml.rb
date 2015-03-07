@@ -1,36 +1,34 @@
+require 'formula'
+
 class ObjectiveCaml < Formula
-  homepage "http://ocaml.org"
-  url "http://caml.inria.fr/pub/distrib/ocaml-4.02/ocaml-4.02.1.tar.gz"
-  sha1 "6af8c67f2badece81d8e1d1ce70568a16e42313e"
-  revision 2
+  homepage 'http://ocaml.org'
+  url 'http://caml.inria.fr/pub/distrib/ocaml-4.01/ocaml-4.01.0.tar.gz'
+  sha1 '31ae98051d42e038f4fbc5fd338c4fa5c36744e0'
 
-  head "http://caml.inria.fr/svn/ocaml/trunk", :using => :svn
+  head 'http://caml.inria.fr/svn/ocaml/trunk', :using => :svn
 
-  option "with-x11", "Install with the Graphics module"
-  depends_on :x11 => :optional
+  depends_on :x11 if MacOS::X11.installed?
 
   bottle do
-    revision 1
-    sha1 "ff2aad908892c78304c153c4c744954f1dadc5c7" => :yosemite
-    sha1 "624ddd8c46b91daa51658e06d4ac1e3e20012779" => :mavericks
-    sha1 "fa162f9f75ea191f0f9dd59298a0b62c2c761118" => :mountain_lion
+    sha1 'cba09036b0ddc87f04675f3ceaac2c46b99dcb20' => :mountain_lion
+    sha1 '90e110ace80da3e633b3ba0b95530fe5d43045d7' => :lion
+    sha1 '5b320577bcb6e39ada153e2de14a105a2afb5ca2' => :snow_leopard
   end
 
   def install
-    args = %W[
-      --prefix #{HOMEBREW_PREFIX}
-      --mandir #{man}
-      -with-debug-runtime
-    ]
-    args << "-cc" << "#{ENV.cc} #{ENV.cflags}"
-    args << "-aspp" << "#{ENV.cc} #{ENV.cflags} -c"
-    args << "-no-graph" if build.without? "x11"
-
+    system "./configure", "--prefix", HOMEBREW_PREFIX,
+                          "--mandir", man,
+                          "-cc", ENV.cc,
+                          "-with-debug-runtime",
+                          "-aspp", "#{ENV.cc} -c"
     ENV.deparallelize # Builds are not parallel-safe, esp. with many cores
-    system "./configure", *args
-    system "make", "world"
-    system "make", "opt"
-    system "make", "opt.opt"
+    system "make world"
+    system "make opt"
+    system "make opt.opt"
     system "make", "PREFIX=#{prefix}", "install"
+
+    # site-lib in the Cellar will be a symlink to the HOMEBREW_PREFIX location,
+    # which is mkpath'd by Keg#link when something installs into it
+    ln_s HOMEBREW_PREFIX/"lib/ocaml/site-lib", lib/"ocaml/site-lib"
   end
 end

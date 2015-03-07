@@ -1,14 +1,14 @@
 require 'formula'
 require 'tab'
 
-module Homebrew
+module Homebrew extend self
   def missing_deps ff
     missing = {}
     ff.each do |f|
       missing_deps = f.recursive_dependencies do |dependent, dep|
         if dep.optional? || dep.recommended?
           tab = Tab.for_formula(dependent)
-          Dependency.prune unless tab.with?(dep)
+          Dependency.prune unless tab.with?(dep.name)
         elsif dep.build?
           Dependency.prune
         end

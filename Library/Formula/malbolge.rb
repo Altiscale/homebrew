@@ -6,7 +6,9 @@ class Malbolge < Formula
   version '0.1.0'
   sha1 'caea2eb8c51486b4de57bdfa5ed4deba431e9e20'
 
-  patch :DATA
+  def patches
+    DATA
+  end
 
   def install
     system ENV.cxx, "malbolge.c", "-o", "malbolge"

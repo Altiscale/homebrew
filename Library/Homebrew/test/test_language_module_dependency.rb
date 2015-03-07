@@ -1,28 +1,31 @@
 require 'testing_env'
 require 'requirements/language_module_dependency'
 
-class LanguageModuleDependencyTests < Homebrew::TestCase
+class LanguageModuleDependencyTests < Test::Unit::TestCase
   def assert_deps_fail(spec)
-    refute_predicate LanguageModuleDependency.new(*spec.shift.reverse), :satisfied?
+    l = LanguageModuleDependency.new(*spec.shift.reverse)
+    assert !l.satisfied?
   end
 
   def assert_deps_pass(spec)
-    assert_predicate LanguageModuleDependency.new(*spec.shift.reverse), :satisfied?
+    l = LanguageModuleDependency.new(*spec.shift.reverse)
+    assert l.satisfied?
   end
 
   def test_unique_deps_are_not_eql
     x = LanguageModuleDependency.new(:node, "less")
     y = LanguageModuleDependency.new(:node, "coffee-script")
-    refute_eql x, y
-    refute_equal x.hash, y.hash
+    assert x.hash != y.hash
+    assert !x.eql?(y)
+    assert !y.eql?(x)
   end
 
   def test_differing_module_and_import_name
     mod_name = "foo"
     import_name = "bar"
     l = LanguageModuleDependency.new(:python, mod_name, import_name)
-    assert_includes l.message, mod_name
-    assert_includes l.the_test, "import #{import_name}"
+    assert l.message.include?(mod_name)
+    assert l.the_test.one? { |c| c.include?(import_name) }
   end
 
   def test_bad_perl_deps
@@ -47,6 +50,16 @@ class LanguageModuleDependencyTests < Homebrew::TestCase
 
   def test_good_ruby_deps
     assert_deps_pass "date" => :ruby
+  end
+
+  if which("jruby")
+    def test_bad_jruby_deps
+      assert_deps_fail "notapackage" => :jruby
+    end
+
+    def test_good_jruby_deps
+      assert_deps_pass "date" => :jruby
+    end
   end
 
   if which("rbx")

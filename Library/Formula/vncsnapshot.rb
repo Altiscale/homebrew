@@ -2,12 +2,15 @@ require 'formula'
 
 class Vncsnapshot < Formula
   homepage 'http://sourceforge.net/projects/vncsnapshot/'
-  url 'https://downloads.sourceforge.net/project/vncsnapshot/vncsnapshot/1.2a/vncsnapshot-1.2a-src.tar.gz'
+  url 'http://downloads.sourceforge.net/project/vncsnapshot/vncsnapshot/1.2a/vncsnapshot-1.2a-src.tar.gz'
   sha1 '115d9497467e5e5f13df2c108893db3d1d4c51bc'
 
   depends_on 'jpeg'
 
-  patch :DATA # remove old PPC __APPLE__ ifdef from sockets.cxx
+  def patches
+    # remove old PPC __APPLE__ ifdef from sockets.cxx
+    DATA
+  end
 
   def install
     # From Ubuntu

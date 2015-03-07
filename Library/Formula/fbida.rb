@@ -10,7 +10,7 @@ class Fbida < Formula
 
   # Fix for build failure in fbida 2.09 (and earlier)
   # Check again in fbida 2.10
-  patch :DATA
+  def patches; DATA; end
 
   def install
     ENV.append 'LDFLAGS', '-liconv'

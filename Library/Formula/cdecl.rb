@@ -21,9 +21,4 @@ class Cdecl < Formula
                    "MANDIR=#{man1}",
                    "install"
   end
-
-  test do
-    assert_equal "declare a as pointer to int",
-                 shell_output("#{bin}/cdecl explain int *a").strip
-  end
 end

@@ -21,8 +21,6 @@ module OS
         "2.7.52" => "2.7.5_rc3",
         "2.7.53" => "2.7.5_rc4",
         "2.7.54" => "2.7.5",
-        "2.7.61" => "2.7.6",
-        "2.7.73" => "2.7.7",
       }.freeze
 
       # This returns the version number of XQuartz, not of the upstream X.org.
@@ -42,25 +40,23 @@ module OS
         end
       end
 
-      # https://xquartz.macosforge.org/trac/wiki
-      # https://xquartz.macosforge.org/trac/wiki/Releases
+      # http://xquartz.macosforge.org/trac/wiki
+      # http://xquartz.macosforge.org/trac/wiki/Releases
       def latest_version
         case MacOS.version
         when "10.5"
           "2.6.3"
         else
-          "2.7.7"
+          "2.7.5"
         end
       end
 
       def bundle_path
-        MacOS.app_with_bundle_id(FORGE_BUNDLE_ID, APPLE_BUNDLE_ID)
+        MacOS.app_with_bundle_id(FORGE_BUNDLE_ID) || MacOS.app_with_bundle_id(APPLE_BUNDLE_ID)
       end
 
       def version_from_mdls(path)
-        version = Utils.popen_read(
-          "/usr/bin/mdls", "-raw", "-nullMarker", "", "-name", "kMDItemVersion", path.to_s
-        ).strip
+        version = `mdls -raw -nullMarker "" -name kMDItemVersion "#{path}" 2>/dev/null`.strip
         version unless version.empty?
       end
 
@@ -90,8 +86,8 @@ module OS
       end
 
       # This should really be private, but for compatibility reasons it must
-      # remain public. New code should use MacOS::X11.bin, MacOS::X11.lib and
-      # MacOS::X11.include instead, as that accounts for Xcode-only systems.
+      # remain public. New code should use MacOS::X11.{bin,lib,include}
+      # instead, as that accounts for Xcode-only systems.
       def prefix
         @prefix ||= if Pathname.new('/opt/X11/lib/libpng.dylib').exist?
           Pathname.new('/opt/X11')

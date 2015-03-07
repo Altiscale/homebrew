@@ -2,12 +2,14 @@ require 'formula'
 
 class Wput < Formula
   homepage 'http://wput.sourceforge.net/'
-  url 'https://downloads.sourceforge.net/project/wput/wput/0.6.2/wput-0.6.2.tgz'
+  url 'http://downloads.sourceforge.net/project/wput/wput/0.6.2/wput-0.6.2.tgz'
   sha1 'c058f76395672d1fbbb839c958d6537e82fc88b7'
 
   # The patch is to skip inclusion of malloc.h only on OSX. Upstream:
   # https://sourceforge.net/tracker/?func=detail&aid=3481469&group_id=141519&atid=749615
-  patch :DATA
+  def patches
+    DATA
+  end
 
   def install
     system "./configure", "--disable-debug", "--disable-dependency-tracking",
@@ -17,7 +19,7 @@ class Wput < Formula
     system "make install"
   end
 
-  test do
+  def test
     system "#{bin}/wput", "--version"
   end
 end

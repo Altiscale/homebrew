@@ -1,42 +1,41 @@
 require 'cmd/tap' # for tap_args
 
-module Homebrew
+module Homebrew extend self
   def untap
     raise "Usage is `brew untap <tap-name>`" if ARGV.empty?
 
-    ARGV.each do |tapname|
-      user, repo = tap_args(tapname)
+    user, repo = tap_args
 
-      # we consistently downcase in tap to ensure we are not bitten by case-insensive
-      # filesystem issues. Which is the default on mac. The problem being the
-      # filesystem cares, but our regexps don't. So unless we resolve *every* path
-      # we will get bitten.
-      user.downcase!
-      repo.downcase!
+    # we consistently downcase in tap to ensure we are not bitten by case-insensive
+    # filesystem issues. Which is the default on mac. The problem being the
+    # filesystem cares, but our regexps don't. So unless we resolve *every* path
+    # we will get bitten.
+    user.downcase!
+    repo.downcase!
 
-      tapd = HOMEBREW_LIBRARY/"Taps/#{user}/homebrew-#{repo}"
+    tapd = HOMEBREW_LIBRARY/"Taps/#{user}-#{repo}"
 
-      raise "No such tap!" unless tapd.directory?
+    raise "No such tap!" unless tapd.directory?
 
-      files = []
-      tapd.find_formula { |file| files << file }
-      unlink_tap_formula(files)
-      tapd.rmtree
-      tapd.dirname.rmdir_if_possible
-      puts "Untapped #{files.length} formula#{plural(files.length, 'e')}"
-    end
+    files = []
+    tapd.find_formula{ |file| files << Pathname.new("#{user}-#{repo}").join(file) }
+    unlink_tap_formula(files)
+    rm_rf tapd
+    puts "Untapped #{files.length} formula"
   end
 
-  def unlink_tap_formula paths
+  def unlink_tap_formula formulae
     untapped = 0
     gitignores = (HOMEBREW_LIBRARY/"Formula/.gitignore").read.split rescue []
 
-    paths.each do |path|
-      link = HOMEBREW_LIBRARY.join("Formula", path.basename)
+    formulae.each do |formula|
+      tapd = (HOMEBREW_LIBRARY/"Taps/#{formula}").dirname
+      bn = formula.basename.to_s
+      pn = HOMEBREW_LIBRARY/"Formula/#{bn}"
 
-      if link.symlink? && (!link.exist? || link.resolved_path == path)
-        link.delete
-        gitignores.delete(path.basename.to_s)
+      if pn.symlink? and (!pn.exist? or pn.realpath.to_s =~ %r[^#{tapd}])
+        pn.delete
+        gitignores.delete(bn)
         untapped += 1
       end
     end

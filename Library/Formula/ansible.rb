@@ -1,131 +1,97 @@
+require 'formula'
+
 class Ansible < Formula
-  homepage "http://www.ansible.com/home"
-  url "http://releases.ansible.com/ansible/ansible-1.8.4.tar.gz"
-  sha1 "74be0c102506d14940bc76f5c5659618368c41ec"
+  homepage 'http://www.ansibleworks.com/'
+  url 'https://github.com/ansible/ansible/archive/v1.4.0.tar.gz'
+  sha1 'fd4a5fa2c11f9a2fbdb450595cf8672d33618f06'
 
-  head "https://github.com/ansible/ansible.git", :branch => "devel"
+  head 'https://github.com/ansible/ansible.git', :branch => :devel
 
-  bottle do
-    sha1 "ded64af2f1dd1ea01884ca4d45af6d2d3f797328" => :yosemite
-    sha1 "e0b1936ec56959804e55d5fcfd3f412d2c016c59" => :mavericks
-    sha1 "608835ce4a22a70da5442d4b021a86537dc5ba0c" => :mountain_lion
+  depends_on :python
+  depends_on 'libyaml'
+
+  option 'with-accelerate', "Enable accelerated mode"
+
+  resource 'pycrypto' do
+    url 'https://pypi.python.org/packages/source/p/pycrypto/pycrypto-2.6.tar.gz'
+    sha1 'c17e41a80b3fbf2ee4e8f2d8bb9e28c5d08bbb84'
   end
 
-  depends_on :python if MacOS.version <= :snow_leopard
-  depends_on "libyaml"
-
-  resource "docker-py" do
-    url "https://pypi.python.org/packages/source/d/docker-py/docker-py-0.6.0.tar.gz"
-    sha1 "01eb7b2cd1a607d361170041b973a0e36bb1be42"
+  resource 'pyyaml' do
+    url 'https://pypi.python.org/packages/source/P/PyYAML/PyYAML-3.10.tar.gz'
+    sha1 '476dcfbcc6f4ebf3c06186229e8e2bd7d7b20e73'
   end
 
-  resource "requests" do
-    url "https://pypi.python.org/packages/source/r/requests/requests-2.5.1.tar.gz"
-    sha1 "f906c441be2f0e7a834cbf701a72788d3ac3d144"
+  resource 'paramiko' do
+    url 'https://pypi.python.org/packages/source/p/paramiko/paramiko-1.11.0.tar.gz'
+    sha1 'fd925569b9f0b1bd32ce6575235d152616e64e46'
   end
 
-  resource "websocket-client" do
-    url "https://pypi.python.org/packages/source/w/websocket-client/websocket-client-0.11.0.tar.gz"
-    sha1 "a38cb6072a25b18faf11d31dd415750692c36f33"
+  resource 'markupsafe' do
+    url 'https://pypi.python.org/packages/source/M/MarkupSafe/MarkupSafe-0.18.tar.gz'
+    sha1 '9fe11891773f922a8b92e83c8f48edeb2f68631e'
   end
 
-  resource "six" do
-    url "https://pypi.python.org/packages/source/s/six/six-1.8.0.tar.gz"
-    sha1 "aa3b0659cbc85c6c7a91efc51f2d1007040070cd"
+  resource 'jinja2' do
+    url 'https://pypi.python.org/packages/source/J/Jinja2/Jinja2-2.7.1.tar.gz'
+    sha1 'a9b24d887f2be772921b3ee30a0b9d435cffadda'
   end
 
-  resource "pycrypto" do
-    url "https://pypi.python.org/packages/source/p/pycrypto/pycrypto-2.6.tar.gz"
-    sha1 "c17e41a80b3fbf2ee4e8f2d8bb9e28c5d08bbb84"
+  if build.with? 'accelerate'
+    resource 'python-keyczar' do
+      url 'https://pypi.python.org/packages/source/p/python-keyczar/python-keyczar-0.71b.tar.gz'
+      sha1 '20c7c5d54c0ce79262092b4cc691aa309fb277fa'
+    end
   end
 
-  resource "boto" do
-    url "https://pypi.python.org/packages/source/b/boto/boto-2.36.0.tar.gz"
-    sha1 "f230ff9b041d3b43244086e38b7b6029450898be"
-  end
-
-  resource "pyyaml" do
-    url "https://pypi.python.org/packages/source/P/PyYAML/PyYAML-3.10.tar.gz"
-    sha1 "476dcfbcc6f4ebf3c06186229e8e2bd7d7b20e73"
-  end
-
-  resource "paramiko" do
-    url "https://pypi.python.org/packages/source/p/paramiko/paramiko-1.11.0.tar.gz"
-    sha1 "fd925569b9f0b1bd32ce6575235d152616e64e46"
-  end
-
-  resource "markupsafe" do
-    url "https://pypi.python.org/packages/source/M/MarkupSafe/MarkupSafe-0.18.tar.gz"
-    sha1 "9fe11891773f922a8b92e83c8f48edeb2f68631e"
-  end
-
-  resource "jinja2" do
-    url "https://pypi.python.org/packages/source/J/Jinja2/Jinja2-2.7.1.tar.gz"
-    sha1 "a9b24d887f2be772921b3ee30a0b9d435cffadda"
-  end
-
-  resource "pyasn1" do
-    url "https://pypi.python.org/packages/source/p/pyasn1/pyasn1-0.1.7.tar.gz"
-    sha1 "e32b91c5a5d9609fb1d07d8685a884bab22ca6d0"
-  end
-
-  resource "python-keyczar" do
-    url "https://pypi.python.org/packages/source/p/python-keyczar/python-keyczar-0.71c.tar.gz"
-    sha1 "0ac1e85e05acac470029d1eaeece5c47d59fcc89"
-  end
-
-  resource "pywinrm" do
-    url "https://github.com/diyan/pywinrm/archive/df049454a9309280866e0156805ccda12d71c93a.zip"
-    sha1 "f2f94b9a1038425323afaa191a25798c1c0b8426"
-  end
-
-  resource "isodate" do
-    url "https://pypi.python.org/packages/source/i/isodate/isodate-0.5.0.tar.gz"
-    sha1 "1174aeb482567df02933bdc6f6e7c2a9a72eb31e"
-  end
-
-  resource "xmltodict" do
-    url "https://pypi.python.org/packages/source/x/xmltodict/xmltodict-0.9.0.tar.gz"
-    sha1 "06e4396e886133fdc0b10147c388ed82b0586c83"
+  # TODO: Move this into Library/Homebrew somewhere (see also mitmproxy.rb).
+  def wrap bin_file, pythonpath
+    bin_file = Pathname.new bin_file
+    libexec_bin = Pathname.new libexec/'bin'
+    libexec_bin.mkpath
+    mv bin_file, libexec_bin
+    bin_file.write <<-EOS.undent
+      #!/bin/sh
+      PYTHONPATH="#{pythonpath}:$PYTHONPATH" "#{libexec_bin}/#{bin_file.basename}" "$@"
+    EOS
   end
 
   def install
-    ENV["PYTHONPATH"] = libexec/"vendor/lib/python2.7/site-packages"
-    ENV.prepend_create_path "PYTHONPATH", libexec/"lib/python2.7/site-packages"
+    install_args = [ "setup.py", "install", "--prefix=#{libexec}" ]
 
-    res = %w[pycrypto boto pyyaml paramiko markupsafe jinja2]
-    res += %w[isodate xmltodict pywinrm] # windows support
-    res += %w[six requests websocket-client docker-py] # docker support
-    res += %w[pyasn1 python-keyczar] # accelerate support
-    res.each do |r|
-      resource(r).stage do
-        system "python", *Language::Python.setup_install_args(libexec/"vendor")
+    python do
+      resource('pycrypto').stage { system python, *install_args }
+      resource('pyyaml').stage { system python, *install_args }
+      resource('paramiko').stage { system python, *install_args }
+      resource('markupsafe').stage { system python, *install_args }
+      resource('jinja2').stage { system python, *install_args }
+      if build.with? 'accelerate'
+        resource('python-keyczar').stage { system python, *install_args }
       end
+
+      inreplace 'lib/ansible/constants.py' do |s|
+        s.gsub! '/usr/share/ansible', share+'ansible'
+        s.gsub! '/etc/ansible', etc+'ansible'
+      end
+
+      # The "main" ansible module is installed in the default location and
+      # in order for it to be usable, we add the private_site_packages
+      # to the __init__.py of ansible so the deps (PyYAML etc) are found.
+      inreplace 'lib/ansible/__init__.py',
+                "__author__ = 'Michael DeHaan'",
+                "__author__ = 'Michael DeHaan'; import site; site.addsitedir('#{python.private_site_packages}')"
+
+      system python, "setup.py", "install", "--prefix=#{prefix}"
     end
 
-    inreplace "lib/ansible/constants.py" do |s|
-      s.gsub! "/usr/share/ansible", share/"ansible"
-      s.gsub! "/etc/ansible", etc/"ansible"
+    man1.install Dir['docs/man/man1/*.1']
+
+    Dir["#{bin}/*"].each do |bin_file|
+      wrap bin_file, python.site_packages
     end
-
-    system "python", *Language::Python.setup_install_args(libexec)
-
-    man1.install Dir["docs/man/man1/*.1"]
-    bin.install Dir["#{libexec}/bin/*"]
-    bin.env_script_all_files(libexec/"bin", :PYTHONPATH => ENV["PYTHONPATH"])
   end
 
-  test do
-    ENV["ANSIBLE_REMOTE_TEMP"] = testpath/"tmp"
-    (testpath/"playbook.yml").write <<-EOF.undent
-      ---
-      - hosts: all
-        gather_facts: False
-        tasks:
-        - name: ping
-          ping:
-    EOF
-    (testpath/"hosts.ini").write("localhost ansible_connection=local\n")
-    system bin/"ansible-playbook", testpath/"playbook.yml", "-i", testpath/"hosts.ini"
+  def test
+    system "#{bin}/ansible", "--version"
   end
 end

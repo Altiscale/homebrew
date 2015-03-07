@@ -26,6 +26,6 @@ class Radamsa < Formula
   end
 
   test do
-    system bin/"radamsa", "-V"
+    system "radamsa -V"
   end
 end

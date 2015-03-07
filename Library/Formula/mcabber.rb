@@ -2,19 +2,19 @@ require 'formula'
 
 class Mcabber < Formula
   homepage 'http://mcabber.com/'
-  url 'http://mcabber.com/files/mcabber-0.10.3.tar.bz2'
-  sha1 '9254f520cb37e691fb55d4fc46df4440e4a17f14'
+  url 'http://mcabber.com/files/mcabber-0.10.2.tar.bz2'
+  sha1 '7bff70dcf09e8a8a4cc7219e03b48bad382a6bda'
 
   head do
     url 'http://mcabber.com/hg/', :using => :hg
 
-    depends_on "autoconf" => :build
-    depends_on "automake" => :build
-    depends_on "libtool" => :build
+    depends_on :autoconf
+    depends_on :automake
+    depends_on :libtool
   end
 
-  deprecated_option "enable-aspell" => "with-aspell"
-  deprecated_option "enable-enchant" => "with-enchant"
+  option 'enable-enchant', 'Enable spell checking support via enchant'
+  option 'enable-aspell', 'Enable spell checking support via aspell'
 
   depends_on 'pkg-config' => :build
   depends_on 'glib'
@@ -23,13 +23,16 @@ class Mcabber < Formula
   depends_on 'libgcrypt'
   depends_on 'libotr'
   depends_on 'libidn'
-  depends_on "aspell" => :optional
-  depends_on "enchant" => :optional
+  depends_on 'aspell' if build.include? 'enable-aspell'
+  depends_on 'enchant' if build.include? 'enable-enchant'
 
   def install
     if build.head?
-      cd "mcabber"
-      inreplace "autogen.sh", "libtoolize", "glibtoolize"
+      ENV['LIBTOOLIZE'] = 'glibtoolize'
+      ENV['ACLOCAL'] = "aclocal -I #{HOMEBREW_PREFIX}/share/aclocal"
+      cd 'mcabber' # Not using block form on purpose
+      inreplace 'autogen.sh', 'libtoolize', '$LIBTOOLIZE'
+      inreplace 'autogen.sh', 'aclocal', '$ACLOCAL'
       system "./autogen.sh"
     end
 
@@ -37,8 +40,8 @@ class Mcabber < Formula
             "--prefix=#{prefix}",
             "--enable-otr"]
 
-    args << "--enable-aspell" if build.with? "aspell"
-    args << "--enable-enchant" if build.with? "enchant"
+    args << "--enable-aspell" if build.include? 'enable-aspell'
+    args << "--enable-enchant" if build.include? 'enable-enchant'
 
     system "./configure", *args
     system "make install"

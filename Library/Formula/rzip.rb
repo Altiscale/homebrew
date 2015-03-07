@@ -6,27 +6,17 @@ class Rzip < Formula
   sha1 'efeafc7a5bdd7daa0cea8d797ff21aa28bdfc8d9'
 
   def install
-    system "./configure", "--disable-debug",
-                          "--disable-dependency-tracking",
+    system "./configure", "--disable-debug", "--disable-dependency-tracking",
                           "--prefix=#{prefix}"
 
-    system "make", "install", "INSTALL_MAN=#{man}"
+    # --mandir doesn't seem to do anything, so we need to modify the
+    # Makefile ourselves
+    inreplace "Makefile", /^INSTALL_MAN=.+$/, "INSTALL_MAN=#{man}"
 
-    bin.install_symlink "rzip" => "runzip"
-    man1.install_symlink "rzip.1" => "runzip.1"
-  end
+    system "make install"
 
-  test do
-    path = testpath/"data.txt"
-    original_contents = "." * 1000
-    path.write original_contents
-
-    # compress: data.txt -> data.txt.rz
-    system bin/"rzip", path
-    assert !path.exist?
-
-    # decompress: data.txt.rz -> data.txt
-    system bin/"rzip", "-d", "#{path}.rz"
-    assert_equal original_contents, path.read
+    # Make symlinks for `runzip`
+    File.symlink bin+'rzip', bin+'runzip'
+    File.symlink man1+'rzip.1', man1+'runzip.1'
   end
 end
